@@ -1,4 +1,4 @@
-KEY_LENGTH = 0.27
+KEY_LENGTH = 0.3
 
 def create_keyboard(path: str) -> dict:
     with open(path, 'r') as f:
@@ -39,7 +39,6 @@ def main():
 
     print(kb)
     print(find_key((0.07,1.07), kb))
-
 
 if __name__ == '__main__':
     main()

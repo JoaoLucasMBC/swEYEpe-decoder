@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def score(points: list[tuple], curr_point: tuple, center: tuple, mu=0, sigma=0.4) -> float:
@@ -7,7 +8,7 @@ def score(points: list[tuple], curr_point: tuple, center: tuple, mu=0, sigma=0.4
 
 def distance_score(point: tuple, center: tuple, mu=0, sigma=0.4) -> float:
     # Calculate the distance between the point and the center of the key
-    x, y = point
+    x, y, time = point
     x_center, y_center = center
 
     d = np.sqrt((x - x_center)**2 + (y - y_center)**2)

@@ -2,6 +2,7 @@ from trie import Node
 from keyboard import find_key
 from util import update_trie, update_hold_nodes
 from score import score
+from candidates import score_candidates
 
 
 def predict(word: str, coordinates: list[tuple], keyboard: dict, root: Node):
@@ -30,12 +31,28 @@ def predict(word: str, coordinates: list[tuple], keyboard: dict, root: Node):
 
             # If the key is different from the previous one, update the trie
             if key != prev:
-                update_trie(hold_nodes, candidates, root, key, key_score)
+                update_trie(hold_nodes, candidates, root, key, key_score, coordinates[i][2])
             # Otherwise, update only the hold nodes
             else:
-                update_hold_nodes(hold_nodes, key, key_score)
+                update_hold_nodes(hold_nodes, key, key_score, candidates, coordinates[i][2])
             
         prev = key
+    
+    find_best_candidates(word, candidates)
+
+
+def find_best_candidates(word: str, candidates: dict):
+    '''
+    Find the best candidates for the word that the user is typing
+
+    Args:
+    - candidates: dict - a dictionary with the candidates and their scores
+
+    Returns:
+    - list[str] - a list with the best candidates
+    '''
+
+    scores = score_candidates(candidates)
 
     print(word)
-    print(list(sorted(candidates, key=candidates.get, reverse=True))[:5])
+    print(list(sorted(scores, key=scores.get, reverse=True))[:10])

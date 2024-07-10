@@ -32,6 +32,7 @@ def main():
                 word = line.strip().lower()
                 curr = word
                 words[word] = []
+                time = 0
             else:
                 x, y = map(float, line.split(','))
                 words[curr].append((x, y, time))

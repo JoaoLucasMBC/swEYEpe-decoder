@@ -32,6 +32,20 @@ def insert_key(root: Node, key: str):
     curr.word.append(key)
 
 
+def search_trie(root: Node, key: str):
+    curr = root
+
+    for i in range(len(key)):
+        char = key[i]
+
+        if curr.child[ord(char) - ord('a')] is None:
+            return False
+
+        curr = curr.child[ord(char) - ord('a')]
+
+    return curr.word_end and key in curr.word
+
+
 def print_trie(root: Node):
     print(root)
     for c in root.child:

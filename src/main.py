@@ -5,7 +5,12 @@ from predict import predict
 import pandas as pd
 
 def main():
-    with open('../data/eye-test4.txt', 'r') as f:
+    import sys
+    
+    path = sys.argv[1]
+    target = sys.argv[2]
+
+    with open(path, 'r') as f:
         lines: list[str] = f.readlines()
 
     df_training = pd.read_excel('../data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
@@ -44,9 +49,12 @@ def main():
     for word in training_words:
         insert_key(root, word)
 
-    for word in words:
-        predict(word, words[word], keyboard, root)
+    #for word in words:
+    #    predict(word, words[word], keyboard, root)
 
+    result = predict(target, words[target], keyboard, root)
+
+    return ' '.join(result)
     
 if __name__ == "__main__":
     main()

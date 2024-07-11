@@ -38,10 +38,15 @@ def predict(word: str, coordinates: list[tuple], keyboard: dict, root: Node):
             
         prev = key
     
-    find_best_candidates(word, candidates)
+    results = find_best_candidates(candidates)
+
+    print(word)
+    print(results)
+
+    return results
 
 
-def find_best_candidates(word: str, candidates: dict):
+def find_best_candidates(candidates: dict):
     '''
     Find the best candidates for the word that the user is typing
 
@@ -54,5 +59,4 @@ def find_best_candidates(word: str, candidates: dict):
 
     scores = score_candidates(candidates)
 
-    print(word)
-    print(list(sorted(scores, key=scores.get, reverse=True))[:10])
+    return list(sorted(scores, key=scores.get, reverse=True))[:3]

@@ -10,7 +10,7 @@ def predict():
 
     result = start(points)
 
-    return jsonify(result)
+    return jsonify({'top_words': result})
 
 
 if __name__ == '__main__':

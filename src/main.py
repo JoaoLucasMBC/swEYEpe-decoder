@@ -4,11 +4,7 @@ from predict import predict
 
 import pandas as pd
 
-def main():
-    import sys
-    
-    path = sys.argv[1]
-    target = sys.argv[2]
+def main(path: str, target: str):
 
     with open(path, 'r') as f:
         lines: list[str] = f.readlines()
@@ -52,9 +48,36 @@ def main():
     #for word in words:
     #    predict(word, words[word], keyboard, root)
 
-    result = predict(target, words[target], keyboard, root)
+    result = predict(words[target], keyboard, root, target, True)
 
-    return ' '.join(result)
+    return result
+
+def start(points: list[tuple[float, float]]) -> list[str]:
+    keyboard = create_keyboard('../data/keyboard2.txt')
+
+    df_training = pd.read_excel('../data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
+
+    training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
+
+    # Filter only the words that are alpha
+    training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
+
+    dt = 0.0166666667 # 60 fps
+    time = 0
+
+    for i in range(len(points)):
+        x, y = points[i]
+        points[i] = (x, y, time)
+        time += dt
+
+
+    for word in training_words:
+        insert_key(root, word)
+
+    # Create the trie
+    root = Node()
+
+    return predict(points, keyboard, root)
     
 if __name__ == "__main__":
     main()

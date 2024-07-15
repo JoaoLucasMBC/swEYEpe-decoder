@@ -5,7 +5,7 @@ from score import score
 from candidates import score_candidates
 
 
-def predict(word: str, coordinates: list[tuple], keyboard: dict, root: Node):
+def predict(coordinates: list[tuple], keyboard: dict, root: Node, word: str = 'TEST', verbose=False) -> list[str]:
     '''
     For a given list of eye coordinates over time, predict the most likely words that the user is typing
 
@@ -40,8 +40,9 @@ def predict(word: str, coordinates: list[tuple], keyboard: dict, root: Node):
     
     results = find_best_candidates(candidates)
 
-    print(word)
-    print(results)
+    if verbose:
+        print(word)
+        print(results)
 
     return results
 

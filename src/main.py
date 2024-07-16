@@ -66,16 +66,17 @@ def start(points: list[tuple[float, float]]) -> list[str]:
     time = 0
 
     for i in range(len(points)):
-        x, y = points[i]
+        x, y = points[i].values()
         points[i] = (x, y, time)
         time += dt
+    
+    # Create the trie
+    root = Node()
 
 
     for word in training_words:
         insert_key(root, word)
 
-    # Create the trie
-    root = Node()
 
     return predict(points, keyboard, root)
     

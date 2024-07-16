@@ -6,9 +6,16 @@ app = Flask(__name__)
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
+    
+    print(data)
+
     points = data['gaze_points']
 
+    print(points)
+
     result = start(points)
+    
+    print(result)
 
     return jsonify({'top_words': result})
 

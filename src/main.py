@@ -52,16 +52,7 @@ def main(path: str, target: str):
 
     return result
 
-def start(points: list[tuple[float, float]]) -> list[str]:
-    keyboard = create_keyboard('../data/keyboard2.txt')
-
-    df_training = pd.read_excel('../data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
-
-    training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
-
-    # Filter only the words that are alpha
-    training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
-
+def start(points: list[tuple[float, float]], keyboard, root) -> list[str]:
     dt = 0.0166666667 # 60 fps
     time = 0
 
@@ -69,13 +60,6 @@ def start(points: list[tuple[float, float]]) -> list[str]:
         x, y = points[i].values()
         points[i] = (x, y, time)
         time += dt
-    
-    # Create the trie
-    root = Node()
-
-
-    for word in training_words:
-        insert_key(root, word)
 
 
     return predict(points, keyboard, root)

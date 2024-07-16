@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 
-from main import start
 from keyboard import create_keyboard
 from trie import Node, insert_key
 

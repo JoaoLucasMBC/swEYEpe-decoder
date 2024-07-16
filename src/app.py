@@ -3,7 +3,7 @@ import pandas as pd
 
 from keyboard import create_keyboard
 from trie import Node, insert_key
-
+from predict import predict
 
 app = Flask(__name__)
 
@@ -26,7 +26,7 @@ for word in training_words:
 
 
 @app.route('/predict', methods=['POST'])
-def predict():
+def predict_word():
     data = request.json
     
     print(data)

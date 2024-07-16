@@ -51,18 +51,6 @@ def main(path: str, target: str):
     result = predict(words[target], keyboard, root, target, True)
 
     return result
-
-def start(points: list[tuple[float, float]], keyboard, root) -> list[str]:
-    dt = 0.0166666667 # 60 fps
-    time = 0
-
-    for i in range(len(points)):
-        x, y = points[i].values()
-        points[i] = (x, y, time)
-        time += dt
-
-
-    return predict(points, keyboard, root)
     
 if __name__ == "__main__":
     main()

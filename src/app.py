@@ -36,8 +36,17 @@ def predict():
 
     print(points)
 
-    result = start(points, keyboard, root)
-    
+    dt = 0.0166666667 # 60 fps
+    time = 0
+
+    for i in range(len(points)):
+        x, y = points[i].values()
+        points[i] = (x, y, time)
+        time += dt
+
+
+    result = predict(points, keyboard, root)
+
     print(result)
 
     return jsonify({'top_words': result})

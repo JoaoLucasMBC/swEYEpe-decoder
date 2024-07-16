@@ -28,12 +28,8 @@ for word in training_words:
 @app.route('/predict', methods=['POST'])
 def predict_word():
     data = request.json
-    
-    print(data)
 
     points = data['gaze_points']
-
-    print(points)
 
     dt = 0.0166666667 # 60 fps
     time = 0

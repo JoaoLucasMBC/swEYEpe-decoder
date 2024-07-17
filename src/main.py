@@ -4,7 +4,14 @@ from predict import predict
 
 import pandas as pd
 
-def main(path: str, target: str):
+def main():
+    import sys
+
+    if len(sys.argv) < 2:
+        print('Usage: python main.py <path_to_file>')
+        sys.exit(1)
+
+    path = sys.argv[1]
 
     with open(path, 'r') as f:
         lines: list[str] = f.readlines()
@@ -24,6 +31,7 @@ def main(path: str, target: str):
 
     dt = 0.0166666667 # 60 fps
     time = 0
+    i = 0
 
     # Parse the file and create the dictionary of words with the list of coordinates and the time for each point
     for line in lines:
@@ -31,8 +39,9 @@ def main(path: str, target: str):
         if line:
             if line.isalpha():
                 word = line.strip().lower()
-                curr = word
-                words[word] = []
+                curr = word + str(i)
+                i += 1
+                words[curr] = []
                 time = 0
             else:
                 x, y = map(float, line.split(','))
@@ -45,12 +54,9 @@ def main(path: str, target: str):
     for word in training_words:
         insert_key(root, word)
 
-    #for word in words:
-    #    predict(word, words[word], keyboard, root)
+    for word in words:
+        predict(words[word], keyboard, root, verbose=True)
 
-    result = predict(words[target], keyboard, root, target, True)
-
-    return result
     
 if __name__ == "__main__":
     main()

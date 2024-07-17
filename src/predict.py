@@ -24,7 +24,7 @@ def predict(coordinates: list[tuple], keyboard: dict, root: Node, word: str = 'T
         # Find the key that the user is pointing to
         key = find_key(coordinates[i], keyboard)
 
-        print(f"{coordinates[i]} {key}")
+        #print(f"{coordinates[i]} {key}")
 
         if key is not None:
             # Get the last 20 points

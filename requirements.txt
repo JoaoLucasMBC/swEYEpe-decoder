@@ -2,3 +2,6 @@ numpy
 pandas
 openpyxl
 flask
+scikit-learn
+ipykernel
+matplotlib

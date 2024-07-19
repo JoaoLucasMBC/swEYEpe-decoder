@@ -5,3 +5,5 @@ flask
 scikit-learn
 ipykernel
 matplotlib
+pytho-dotenv
+google-generativeai

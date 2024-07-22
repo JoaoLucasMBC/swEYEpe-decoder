@@ -1,4 +1,4 @@
-from trie import Node
+from trie.trie import Node
 
 T = 1
 

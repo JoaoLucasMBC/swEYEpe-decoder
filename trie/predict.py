@@ -1,8 +1,8 @@
-from trie import Node
-from keyboard import find_key
-from util import update_trie, update_hold_nodes
-from score import score
-from candidates import score_candidates
+from trie.trie import Node
+from trie.keyboard import find_key
+from trie.util import update_trie, update_hold_nodes
+from trie.score import score
+from trie.candidates import score_candidates
 
 
 def predict(coordinates: list[tuple], keyboard: dict, root: Node, word: str = 'TEST', verbose=False) -> list[str]:

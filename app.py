@@ -5,12 +5,14 @@ from trie.keyboard import create_keyboard
 from trie.trie import Node, insert_key
 from trie.predict import predict
 
+from clustering.TCluster import TCluster
+
 app = Flask(__name__)
 
 
-keyboard = create_keyboard('../data/keyboard2.txt')
+keyboard = create_keyboard('data/keyboard2.txt')
 
-df_training = pd.read_excel('../data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
+df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 
 training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
 
@@ -45,6 +47,28 @@ def predict_word():
     print(result)
 
     return jsonify({'top_words': result})
+
+
+@app.route('/cluster', methods=['POST'])
+def predict_cluster():
+    data = request.json
+
+    df = pd.read_csv('data/collection_v2.csv')
+    df = df.groupby('word_id')
+
+    tc = TCluster()
+
+    results = []
+
+    for word_id, group in df:
+        tc.fit(group[['x', 'y', 'time']])
+        keys = tc.predict(keyboard, root)
+
+        results.append({'word_id': word_id, 'keys': keys})
+    
+    return jsonify({'results': results})
+
+
 
 
 if __name__ == '__main__':

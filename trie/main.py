@@ -1,6 +1,6 @@
-from trie import Node, insert_key, print_trie, search_trie
-from keyboard import create_keyboard
-from predict import predict
+from trie.trie import Node, insert_key, print_trie, search_trie
+from trie.keyboard import create_keyboard
+from trie.predict import predict
 
 import pandas as pd
 

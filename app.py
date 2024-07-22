@@ -33,14 +33,7 @@ def predict_word():
 
     points = data['gaze_points']
 
-    dt = 0.0166666667 # 60 fps
-    time = 0
-
-    for i in range(len(points)):
-        x, y = points[i].values()
-        points[i] = (x, y, time)
-        time += dt
-
+    points = [(point['x'], point['y'], point['time']) for point in points if point['y'] > 0]
 
     result = predict(points, keyboard, root)
 
@@ -52,6 +45,25 @@ def predict_word():
 @app.route('/cluster', methods=['POST'])
 def predict_cluster():
     data = request.json
+
+    points = data['gaze_points']
+
+    points = [(point['x'], point['y'], point['time']) for point in points if point['y'] > 0]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster()
+    tc.fit(df)
+
+    keys = tc.predict(keyboard, root)
+
+    return jsonify({'top_words': keys})
+
+
+
+
+@app.route('/test', methods=['POST'])
+def testing():
 
     df = pd.read_csv('data/collection_v2.csv')
     df = df.groupby('word_id')

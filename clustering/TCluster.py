@@ -52,7 +52,7 @@ class TCluster:
             for k in key:
                 self.update_trie(hold_nodes, candidates, trie, k[0], np.exp(-alpha*k[1]), 0)
         
-        return sorted(candidates.items(), key=lambda x: x[1][0], reverse=True)[:3]
+        return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
 
 
     def find_key_centroid(self, keyboard, verbose: bool=False) -> list:

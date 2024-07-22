@@ -40,7 +40,9 @@ class TCluster:
         
         self.labels_ = self.X['label'].tolist()
 
-    def predict(self, keyboard: dict[str, float], trie: Node, verbose: bool=False) -> list:
+
+
+    def predict(self, keyboard: dict[str, float], trie: Node, alpha: float=1, verbose: bool=False) -> list:
         keys = self.find_key_centroid(keyboard, verbose)
 
         hold_nodes = set()
@@ -48,12 +50,11 @@ class TCluster:
 
         for key in keys:
             for k in key:
-                self.update_trie(hold_nodes, candidates, trie, k[0], 1/k[1], 0)
+                self.update_trie(hold_nodes, candidates, trie, k[0], np.exp(-alpha*k[1]), 0)
         
         return sorted(candidates.items(), key=lambda x: x[1][0], reverse=True)[:3]
 
 
-    
     def find_key_centroid(self, keyboard, verbose: bool=False) -> list:
         centroids = self.X.groupby('label')[['x', 'y']].mean()
 

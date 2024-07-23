@@ -33,7 +33,7 @@ def predict_word():
 
     points = data['gaze_points']
 
-    points = [(point['x'], point['y'], point['time']) for point in points if point['y'] > 0]
+    points = [(point['x'], point['y'], point['z']) for point in points if point['y'] > 0]
 
     result = predict(points, keyboard, root)
 
@@ -48,7 +48,7 @@ def predict_cluster():
 
     points = data['gaze_points']
 
-    points = [(point['x'], point['y'], point['time']) for point in points if point['y'] > 0]
+    points = [(point['x'], point['y'], point['z']) for point in points if point['y'] > 0]
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
 
@@ -57,7 +57,7 @@ def predict_cluster():
 
     keys = tc.predict(keyboard, root)
 
-    return jsonify({'top_words': keys})
+    return jsonify({'top_words': [key[0] for key in keys]})
 
 
 

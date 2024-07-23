@@ -73,6 +73,11 @@ def testing():
     results = []
 
     for word_id, group in df:
+        group = group[group['y'] > 0]
+
+        if len(group) == 0:
+            continue
+        
         tc.fit(group[['x', 'y', 'time']])
         keys = tc.predict(keyboard, root)
 

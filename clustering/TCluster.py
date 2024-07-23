@@ -5,7 +5,7 @@ import numpy as np
 from trie.trie import Node
 
 class TCluster:
-    def __init__(self, eps: float=0.1, min_samples: int=5, T=1):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T=1):
         self.eps: float = eps
         self.min_samples: int = min_samples
         self.model: DBSCAN = DBSCAN(eps=eps, min_samples=min_samples)
@@ -13,6 +13,7 @@ class TCluster:
         self.X: pd.DataFrame = None
         self.labels_: list = None
 
+        self.alpha = alpha
         self.T = T
     
     def fit(self, X: pd.DataFrame, verbose: bool=False):
@@ -36,21 +37,20 @@ class TCluster:
         Q3 = self.X['label'].value_counts().quantile(0.75)
         IQR = Q3 - Q1
 
-        self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 2 * IQR]
+        self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 3 * IQR]
         
         self.labels_ = self.X['label'].tolist()
 
 
 
-    def predict(self, keyboard: dict[str, float], trie: Node, alpha: float=1, verbose: bool=False) -> list:
+    def predict(self, keyboard: dict[str, float], trie: Node, verbose: bool=False) -> list:
         keys = self.find_key_centroid(keyboard, verbose)
 
         hold_nodes = set()
         candidates = {}
 
         for key in keys:
-            for k in key:
-                self.update_trie(hold_nodes, candidates, trie, k[0], np.exp(-alpha*k[1]), 0)
+            self.update_trie(hold_nodes, candidates, trie, key)
         
         return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
 
@@ -77,30 +77,36 @@ class TCluster:
         
         return keys
     
-    def update_trie(self, hold_nodes: set, candidates: dict, trie: Node, key: str, score: float, time: float):
-        # If the user is pointing to a key, get the initial node for that letter and put it in the hold set if it's not there
-        key = key.lower()
-
-        node = trie.child[ord(key) - ord('a')]
-
-        # Update the node that starts new words
-        if node is not None:
-            hold_nodes.add(node)
+    def update_trie(self, hold_nodes: set, candidates: dict, trie: Node, keys: list):
         
         new_nodes = set()
 
-        # Also, get all the hold nodes and see if their children are the character that the user is pointing to
-        for node in hold_nodes:
-            if node.child[ord(key) - ord('a')] is not None and node.child[ord(key) - ord('a')].letter not in hold_nodes:
-                child = node.child[ord(key) - ord('a')]
-                new_nodes.add(child)
-                child.score = max(child.score, score)
+        for val in keys:
+            time = 0 #FIXME
+            key = val[0]
+            score =  np.exp(-self.alpha*val[1])
 
-                if child.word_end:
-                    for word in child.word:
-                        if word not in candidates:
-                            candidates[word] = (self.calculate_candidate_score(child), time)
-        
+            # If the user is pointing to a key, get the initial node for that letter and put it in the hold set if it's not there
+            key = key.lower()
+
+            node = trie.child[ord(key) - ord('a')]
+
+            # Update the node that starts new words
+            if node is not None:
+                hold_nodes.add(node)
+
+            # Also, get all the hold nodes and see if their children are the character that the user is pointing to
+            for node in hold_nodes:
+                if node.child[ord(key) - ord('a')] is not None and node.child[ord(key) - ord('a')].letter not in hold_nodes:
+                    child = node.child[ord(key) - ord('a')]
+                    new_nodes.add(child)
+                    child.score = max(child.score, score)
+
+                    if child.word_end:
+                        for word in child.word:
+                            if word not in candidates:
+                                candidates[word] = (self.calculate_candidate_score(child), time)
+            
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
 

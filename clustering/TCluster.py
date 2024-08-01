@@ -5,7 +5,7 @@ import numpy as np
 from trie.trie import Node
 
 class TCluster:
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T=1):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T=1, K=3):
         self.eps: float = eps
         self.min_samples: int = min_samples
         self.model: DBSCAN = DBSCAN(eps=eps, min_samples=min_samples)
@@ -15,6 +15,7 @@ class TCluster:
 
         self.alpha = alpha
         self.T = T
+        self.K = K
     
     def fit(self, X: pd.DataFrame, verbose: bool=False):
         self.X = X
@@ -67,13 +68,13 @@ class TCluster:
                 distance = np.linalg.norm(np.array(centroid) - np.array(center))
                 distances[key] = distance
             
-            # Print 3 smallest distances
+            # K smallest distances
             sorted_distances = sorted(distances.items(), key=lambda x: x[1])
 
-            keys.append(sorted_distances[:3])
+            keys.append(sorted_distances[:self.K])
 
             if verbose:
-                print(f"Cluster {cluster_id}: " + ', '.join([f"{key} ({distance:.2f})" for key, distance in sorted_distances[:3]]))
+                print(f"Cluster {cluster_id}: " + ', '.join([f"{key} ({distance:.2f})" for key, distance in sorted_distances[:self.K]]))
         
         return keys
     
@@ -89,24 +90,26 @@ class TCluster:
             # If the user is pointing to a key, get the initial node for that letter and put it in the hold set if it's not there
             key = key.lower()
 
-            node = trie.child[ord(key) - ord('a')]
+            # For now, iterate all the caracters of the keyboard
+            for k in key:
+                node = trie.child[ord(k) - ord('a')]
 
-            # Update the node that starts new words
-            if node is not None:
-                hold_nodes.add(node)
+                # Update the node that starts new words
+                if node is not None:
+                    hold_nodes.add(node)
 
-            # Also, get all the hold nodes and see if their children are the character that the user is pointing to
-            for node in hold_nodes:
-                if node.child[ord(key) - ord('a')] is not None and node.child[ord(key) - ord('a')].letter not in hold_nodes:
-                    child = node.child[ord(key) - ord('a')]
-                    new_nodes.add(child)
-                    child.score = max(child.score, score)
+                # Also, get all the hold nodes and see if their children are the character that the user is pointing to
+                for node in hold_nodes:
+                    if node.child[ord(k) - ord('a')] is not None and node.child[ord(k) - ord('a')].letter not in hold_nodes:
+                        child = node.child[ord(k) - ord('a')]
+                        new_nodes.add(child)
+                        child.score = max(child.score, score)
 
-                    if child.word_end:
-                        for word in child.word:
-                            if word not in candidates:
-                                candidates[word] = (self.calculate_candidate_score(child), time)
-            
+                        if child.word_end:
+                            for word in child.word:
+                                if word not in candidates:
+                                    candidates[word] = (self.calculate_candidate_score(child), time)
+                
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
 

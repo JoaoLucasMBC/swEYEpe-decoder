@@ -69,8 +69,15 @@ def predict_circle():
     radius = data['radius']
     center = (data['center']['x'], data['center']['y'])
 
+    print(center)
+    print(radius)
+    print(points)
+
     # Filter OUT the points that are in the circle
     points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2]
+
+    print(points)
+    print(len(points))
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
 

@@ -16,7 +16,7 @@ class TCluster:
         self.alpha = alpha
         self.T = T
         self.K = K
-    
+
     def fit(self, X: pd.DataFrame, verbose: bool=False):
         self.X = X
         self.model.fit(X)
@@ -29,7 +29,7 @@ class TCluster:
         if verbose:
             print(f'{len(self.model.labels_)} Labels:', self.model.labels_)
             print('Core samples:', self.model.core_sample_indices_)
-    
+
     def filter_labels(self):
         self.X = self.X[self.X['label'] != -1]
 
@@ -39,7 +39,7 @@ class TCluster:
         IQR = Q3 - Q1
 
         self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 3 * IQR]
-        
+
         self.labels_ = self.X['label'].tolist()
 
 
@@ -52,7 +52,7 @@ class TCluster:
 
         for key in keys:
             self.update_trie(hold_nodes, candidates, trie, key)
-        
+
         return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
 
 
@@ -60,14 +60,14 @@ class TCluster:
         centroids = self.X.groupby('label')[['x', 'y']].mean()
 
         keys = []
-        
+
         for cluster_id, centroid in centroids.iterrows():
             distances = {}
             for key, points in keyboard.items():
                 center, top_left, top_right, bottom_right, bottom_left = points
                 distance = np.linalg.norm(np.array(centroid) - np.array(center))
                 distances[key] = distance
-            
+
             # K smallest distances
             sorted_distances = sorted(distances.items(), key=lambda x: x[1])
 
@@ -75,11 +75,11 @@ class TCluster:
 
             if verbose:
                 print(f"Cluster {cluster_id}: " + ', '.join([f"{key} ({distance:.2f})" for key, distance in sorted_distances[:self.K]]))
-        
+
         return keys
-    
+
     def update_trie(self, hold_nodes: set, candidates: dict, trie: Node, keys: list):
-        
+
         new_nodes = set()
 
         for val in keys:
@@ -109,7 +109,7 @@ class TCluster:
                             for word in child.word:
                                 if word not in candidates:
                                     candidates[word] = (self.calculate_candidate_score(child), time)
-                
+
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
 
@@ -121,7 +121,7 @@ class TCluster:
         while node.parent is not None:
             score += node.score
             node = node.parent
-        
+
         return score
 
 

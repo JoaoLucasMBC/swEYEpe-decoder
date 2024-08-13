@@ -12,6 +12,7 @@ app = Flask(__name__)
 
 keyboard = create_keyboard('data/keyboard2.txt')
 keyboard_circle = create_keyboard('data/keyboard_circle.txt')
+keyboard_circle_alpha = create_keyboard('data/keyboard_circle_alphabetical.txt')
 
 df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 
@@ -78,6 +79,26 @@ def predict_circle():
     tc.fit(df)
 
     keys = tc.predict(keyboard_circle, root)
+
+    return jsonify({'top_words': [key[0] for key in keys]})
+
+@app.route('/circleAlpha', methods=['POST'])
+def predict_circle_alpha():
+    data = request.json
+
+    points = data['gaze_points']
+    radius = data['radius'] #0.75
+    center = (data['center']['x'], data['center']['y']) #0.525
+
+    # Filter OUT the points that are in the circle
+    points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster(K=1)
+    tc.fit(df)
+
+    keys = tc.predict(keyboard_circle_alpha, root)
 
     return jsonify({'top_words': [key[0] for key in keys]})
 

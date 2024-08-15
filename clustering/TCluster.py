@@ -10,7 +10,7 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T=1, K=3):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3):
         """
         Constructor for the TCluster class.
         """
@@ -25,9 +25,9 @@ class TCluster:
         self.labels_: list = None
 
         # T-Cluster parameters
-        self.alpha = alpha # Decay factor
-        self.T = T # Time threshold
-        self.K = K # Number of keys to consider for each cluster
+        self.alpha: float = alpha # Decay factor
+        self.T: float = T # Time threshold
+        self.K: int = K # Number of keys to consider for each cluster
 
 
 
@@ -165,7 +165,7 @@ class TCluster:
                 # If the node exists as start of a word in the vocab, add it to the hold nodes
                 # hold nodes being a set guarantees that we don't add the same node twice
                 if node is not None:
-                    hold_nodes.add(node)
+                    new_nodes.add(node)
                     node.score = max(node.score, score) # update the score of the node
 
                 # Also, get all the current hold nodes and see if their children includes the character that the user is pointing to
@@ -182,6 +182,27 @@ class TCluster:
                             for word in child.word:
                                 if word not in candidates:
                                     candidates[word] = (self._calculate_candidate_score(child), time)
+
+                # Now I need to check the possible permutations of the new nodes
+                permutation_nodes = set()
+
+                for node in new_nodes:
+                    for other in new_nodes:
+                        if node.letter != other.letter and node.child[ord(other.letter) - ord('a')] is not None:
+
+                            # Add the child to the new nodes and update the score
+                            child = node.child[ord(other.letter) - ord('a')]
+                            permutation_nodes.add(child)
+                            child.score = max(child.score, score)
+                            
+                            if child.word_end:
+                                for word in child.word:
+                                    if word not in candidates:
+                                        candidates[word] = (self._calculate_candidate_score(child), time)
+
+                # Merge the permutation nodes with the new nodes
+                new_nodes.update(permutation_nodes)
+                                    
 
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)

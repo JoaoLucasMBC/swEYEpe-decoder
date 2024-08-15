@@ -11,7 +11,8 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str='../data/bigram.json'):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str='data\\bigram.json'):
+        
         """
         Constructor for the TCluster class.
         """

@@ -1,6 +1,7 @@
 from sklearn.cluster import DBSCAN
 import pandas as pd
 import numpy as np
+import json
 
 from trie.trie import Node
 
@@ -10,7 +11,7 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str='../data/bigram.json'):
         """
         Constructor for the TCluster class.
         """
@@ -28,6 +29,18 @@ class TCluster:
         self.alpha: float = alpha # Decay factor
         self.T: float = T # Time threshold
         self.K: int = K # Number of keys to consider for each cluster
+
+        # Context parameters for sentences bigrams
+        with open(bigram_path, 'r') as f:
+            bigram_probs: dict[dict] = json.load(f)
+        
+        if len(context) < 2:
+            last_two: list[str] = ['<s>', '<s>']
+        else:
+            last_two: list[str] = context[-2:]
+        
+        self.context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
+        
 
 
 
@@ -224,8 +237,26 @@ class TCluster:
             score += node.score
             node = node.parent
 
-        return score
+        return score * self._linguistic_score(self, node.word)
+    
+    def _linguistic_score(self, word: str) -> float:
+        """
+        Calculates the linguistic score of a word based on a bigram model.
 
+        @params:
+        word: str - The word to calculate the linguistic score.
+        """
+        
+        # Get the vocabulary size (V) as the number of unique words in the bigram model
+        V: int = len(self.context_probs)
+
+        # Retrieve the probability of the word or assign 0 if it's not found
+        word_prob: float = self.context_probs.get(word, 0)
+
+        # Apply smoothing
+        smoothed_prob: float = (word_prob + self.alpha) / (sum(self.context_probs.values()) + self.alpha * (V + 1))
+
+        return smoothed_prob
 
     def _update_candidates(self, candidates: dict, time: float) -> None:
         """

@@ -102,6 +102,28 @@ def predict_circle_alpha():
 
     return jsonify({'top_words': [key[0] for key in keys]})
 
+@app.route('/circleOuter', methods=['POST'])
+def predict_circle_outer():
+    data = request.json
+
+    points = data['gaze_points']
+    radius = data['radius'] #0.75
+    outerRadius = data['outer_radius']
+    center = (data['center']['x'], data['center']['y']) #0.525
+
+    # Filter OUT the points that are in the circle
+    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
+                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
+    # points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster(K=1)
+    tc.fit(df)
+
+    keys = tc.predict(keyboard_circle_alpha, root)
+
+    return jsonify({'top_words': [key[0] for key in keys]})
 
 
 @app.route('/test', methods=['POST'])

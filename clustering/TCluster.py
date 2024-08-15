@@ -5,32 +5,61 @@ import numpy as np
 from trie.trie import Node
 
 class TCluster:
+    """
+    Class that implements the T-Cluster algorithm. It uses the DBSCAN algorithm to cluster the points and then
+    uses the trie to predict the words that the user is gaze-typing.
+    """
+
     def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T=1, K=3):
+        """
+        Constructor for the TCluster class.
+        """
+
+        # DBSCAN parameters
         self.eps: float = eps
         self.min_samples: int = min_samples
         self.model: DBSCAN = DBSCAN(eps=eps, min_samples=min_samples)
 
+        # Sets up the data parameters for later
         self.X: pd.DataFrame = None
         self.labels_: list = None
 
-        self.alpha = alpha
-        self.T = T
-        self.K = K
+        # T-Cluster parameters
+        self.alpha = alpha # Decay factor
+        self.T = T # Time threshold
+        self.K = K # Number of keys to consider for each cluster
+
+
 
     def fit(self, X: pd.DataFrame, verbose: bool=False):
+        """
+        Fits the model to the data.
+
+        @params:
+        X: pd.DataFrame - The data to fit the model to.
+        verbose: bool - Whether to print the labels and core samples.
+        """
+
         self.X = X
+
+        # Fit the DBSCAN model to the data
         self.model.fit(X)
 
         self.labels_ = self.model.labels_
         self.X['label'] = self.labels_
 
-        self.filter_labels()
+        self._filter_labels()
 
         if verbose:
             print(f'{len(self.model.labels_)} Labels:', self.model.labels_)
             print('Core samples:', self.model.core_sample_indices_)
 
-    def filter_labels(self):
+    def _filter_labels(self):
+        """
+        Filters the labels that are -1 and the labels that are 2 IQRs away from the median size of the clusters.
+        """
+        
+        # Noise points
         self.X = self.X[self.X['label'] != -1]
 
         # Don't keep the labels that the amount of points are 2 IQRs away from the median
@@ -40,37 +69,62 @@ class TCluster:
 
         self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 3 * IQR]
 
+        # Update the labels
         self.labels_ = self.X['label'].tolist()
 
 
 
     def predict(self, keyboard: dict[str, float], trie: Node, verbose: bool=False) -> list:
-        keys = self.find_key_centroid(keyboard, verbose)
+        """
+        Predicts the words that the user is gaze-typing.
 
+        @params:
+        keyboard: dict[str, float] - The keyboard layout, with the position of the center and vertices of every key + the letters on each key.
+        trie: Node - The trie to predict the words.
+        verbose: bool - Whether to print the clusters and the keys that are being pointed to.
+        """
+
+        keys = self._find_key_centroid(keyboard, verbose)
+
+        # The hold nodes are the nodes already being considered for words
         hold_nodes = set()
+
+        # Candidate words that the user typed
         candidates = {}
 
+        # For each cluster, update the trie trying to find new candidates
         for key in keys:
-            self.update_trie(hold_nodes, candidates, trie, key)
+            self._update_trie(hold_nodes, candidates, trie, key)
 
+        # Return the top 3 word candidates
         return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
 
+    def _find_key_centroid(self, keyboard, verbose: bool=False) -> list:
+        """
+        Finds the key that the user is pointing to.
 
-    def find_key_centroid(self, keyboard, verbose: bool=False) -> list:
+        @params:
+        keyboard: dict[str, float] - The keyboard layout, with the position of the center and vertices of every key + the letters on each key.
+        verbose: bool - Whether to print the clusters and the keys that are being pointed to.
+        """
+        
+        # Calculate the position of the centroid of each cluster
         centroids = self.X.groupby('label')[['x', 'y']].mean()
 
         keys = []
 
+        # For each cluster, save all distances
         for cluster_id, centroid in centroids.iterrows():
             distances = {}
+
+            # Calculate the distance between the centroid and the center of each key
             for key, points in keyboard.items():
                 center, top_left, top_right, bottom_right, bottom_left = points
                 distance = np.linalg.norm(np.array(centroid) - np.array(center))
                 distances[key] = distance
 
-            # K smallest distances
+            # Get the K (hyper-parameter) smallest distances
             sorted_distances = sorted(distances.items(), key=lambda x: x[1])
-
             keys.append(sorted_distances[:self.K])
 
             if verbose:
@@ -78,45 +132,72 @@ class TCluster:
 
         return keys
 
-    def update_trie(self, hold_nodes: set, candidates: dict, trie: Node, keys: list):
+    def _update_trie(self, hold_nodes: set, candidates: dict, trie: Node, keys: list) -> None:
+        """
+        Updates the trie with the new keys that the user is pointing to.
+        It finds the new nodes based on the keys and updates the candidates,
+        trying to form words
 
+        @params:
+        hold_nodes: set - The nodes that are already being considered for words.
+        candidates: dict - The candidate words that the user is typing.
+        trie: Node - The trie to update.
+        keys: list - The keys that the user is pointing to.
+        """
+
+        # We create a set of new nodes so that the letters from the same key are not considered as children of one another
         new_nodes = set()
 
+        # For each one of the keys
         for val in keys:
             time = 0 #FIXME
-            key = val[0]
+            key = val[0] # the string of the key
+
+            # Calculate the score of the key (exponential decay)
             score =  np.exp(-self.alpha*val[1])
 
-            # If the user is pointing to a key, get the initial node for that letter and put it in the hold set if it's not there
             key = key.lower()
 
-            # For now, iterate all the caracters of the keyboard
+            # For every character that is present in that key
             for k in key:
                 node = trie.child[ord(k) - ord('a')]
 
-                # Update the node that starts new words
+                # If the node exists as start of a word in the vocab, add it to the hold nodes
+                # hold nodes being a set guarantees that we don't add the same node twice
                 if node is not None:
                     hold_nodes.add(node)
+                    node.score = max(node.score, score) # update the score of the node
 
-                # Also, get all the hold nodes and see if their children are the character that the user is pointing to
+                # Also, get all the current hold nodes and see if their children includes the character that the user is pointing to
                 for node in hold_nodes:
                     if node.child[ord(k) - ord('a')] is not None and node.child[ord(k) - ord('a')].letter not in hold_nodes:
+
+                        # Add the child to the new nodes and update the score
                         child = node.child[ord(k) - ord('a')]
                         new_nodes.add(child)
                         child.score = max(child.score, score)
-
+                        
+                        # If the child is a word end, add the word to the candidates
                         if child.word_end:
                             for word in child.word:
                                 if word not in candidates:
-                                    candidates[word] = (self.calculate_candidate_score(child), time)
+                                    candidates[word] = (self._calculate_candidate_score(child), time)
 
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
 
-        self.update_candidates(candidates, time)
+        self._update_candidates(candidates, time)
 
 
-    def calculate_candidate_score(self, node: Node) -> float:
+    def _calculate_candidate_score(self, node: Node) -> float:
+        """
+        Calculates the score of a candidate word.
+
+        @params:
+        node: Node - The node that is the end of the candidate word.
+        """
+        
+        # Goes up the trie and sums the score of the nodes
         score = 0
         while node.parent is not None:
             score += node.score
@@ -125,7 +206,15 @@ class TCluster:
         return score
 
 
-    def update_candidates(self, candidates: dict, time: float) -> None:
+    def _update_candidates(self, candidates: dict, time: float) -> None:
+        """
+        Checks the candidates that are being considered as words if they need to be removed.
+
+        @params:
+        candidates: dict - The candidates that are being considered as words.
+        time: float - The time that has passed since the last update.
+        """
+
         # Remove the candidates that are there for more than T time
         for key in list(candidates.keys()):
             if time - candidates[key][1] > self.T:

@@ -195,7 +195,7 @@ class TCluster:
                         if child.word_end:
                             for word in child.word:
                                 if word not in candidates:
-                                    candidates[word] = (self._calculate_candidate_score(child), time)
+                                    candidates[word] = (self._calculate_candidate_score(child, word), time)
 
                 # Now I need to check the possible permutations of the new nodes
                 permutation_nodes = set()
@@ -212,7 +212,7 @@ class TCluster:
                             if child.word_end:
                                 for word in child.word:
                                     if word not in candidates:
-                                        candidates[word] = (self._calculate_candidate_score(child), time)
+                                        candidates[word] = (self._calculate_candidate_score(child, word), time)
 
                 # Merge the permutation nodes with the new nodes
                 new_nodes.update(permutation_nodes)
@@ -224,7 +224,7 @@ class TCluster:
         self._update_candidates(candidates, time)
 
 
-    def _calculate_candidate_score(self, node: Node) -> float:
+    def _calculate_candidate_score(self, node: Node, word: str) -> float:
         """
         Calculates the score of a candidate word.
 
@@ -238,7 +238,7 @@ class TCluster:
             score += node.score
             node = node.parent
 
-        return score * self._linguistic_score(self, node.word)
+        return score * self._linguistic_score(self, word)
     
     def _linguistic_score(self, word: str) -> float:
         """

@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 en_wikinews.txt
+
+.vs/

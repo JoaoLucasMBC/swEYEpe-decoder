@@ -1,9 +1,11 @@
 KEY_LENGTH = 0.3
 
-def create_keyboard(path: str) -> dict:
-    with open(path, 'r') as f:
-        lines = f.readlines()
-    
+def create_keyboard(path: str, useString: bool = False) -> dict:
+    if (not useString):
+        with open(path, 'r') as f:
+            lines = f.readlines()
+    else:
+        lines = path.split('\n')
     keyboard = {}
     for line in lines:
         key, center = line.strip().split()

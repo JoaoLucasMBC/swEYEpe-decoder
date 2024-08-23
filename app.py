@@ -13,6 +13,8 @@ app = Flask(__name__)
 keyboard = create_keyboard('data/keyboard2.txt')
 keyboard_circle = create_keyboard('data/keyboard_circle.txt')
 keyboard_circle_alpha = create_keyboard('data/keyboard_circle_alphabetical.txt')
+different_letters_keyboard = create_keyboard('data/test_letter_differentiation copy.txt')
+keyboard_26_circle = create_keyboard('data/keyboard_26_sections.txt')
 
 df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 
@@ -21,6 +23,12 @@ training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
 # Filter only the words that are alpha
 training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
 
+# phrase_words = []
+# with open("data/phraseWords.txt", 'r', encoding='utf-8') as file:
+#     for line in file:
+#         # Remove punctuation and convert to lowercase
+#         phrase_words.append(line)
+# training_words = training_words + phrase_words
 # Create the trie
 root = Node()
 
@@ -105,7 +113,7 @@ def predict_circle_alpha():
 @app.route('/circleOuter', methods=['POST'])
 def predict_circle_outer():
     data = request.json
-
+    print(jsonify(data))
     points = data['gaze_points']
     radius = data['radius'] #0.75
     outerRadius = data['outer_radius']
@@ -125,6 +133,72 @@ def predict_circle_outer():
 
     return jsonify({'top_words': [key[0] for key in keys]})
 
+@app.route('/circleSmaller', methods=['POST'])
+def predict_circle_closer_smaller():
+    data = request.json
+    print(data)
+    points = data['gaze_points']
+    radius = data['radius'] #0.75
+    outerRadius = data['outer_radius']
+    center = (data['center']['x'], data['center']['y']) #0.525
+
+    # Filter OUT the points that are in the circle
+    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
+                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster(K=1)
+    tc.fit(df)
+
+    keys = tc.predict(different_letters_keyboard, root)
+
+    return jsonify({'top_words': [key[0] for key in keys]})
+
+@app.route('/circle26', methods=['POST'])
+def predict_circle26():
+    data = request.json
+    print(data)
+    points = data['gaze_points']
+    radius = data['radius'] #0.75
+    outerRadius = data['outer_radius']
+    center = (data['center']['x'], data['center']['y']) #0.525
+
+    # Filter OUT the points that are in the circle
+    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
+                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster(K=1)
+    tc.fit(df)
+
+    keys = tc.predict(keyboard_26_circle, root)
+
+    return jsonify({'top_words': [key[0] for key in keys]})
+
+@app.route('/general', methods=['POST'])
+def predict_circle26():
+    data = request.json
+    print(data)
+    custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    points = data['gaze_points']
+    radius = data['radius'] #0.75
+    outerRadius = data['outer_radius']
+    center = (data['center']['x'], data['center']['y']) #0.525
+
+    # Filter OUT the points that are in the circle
+    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
+                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
+
+    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
+
+    tc = TCluster(K=1)
+    tc.fit(df)
+
+    keys = tc.predict(custom_keyboard, root)
+
+    return jsonify({'top_words': [key[0] for key in keys]})
 
 @app.route('/test', methods=['POST'])
 def testing():

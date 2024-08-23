@@ -6,6 +6,7 @@ def create_keyboard(path: str, useString: bool = False) -> dict:
             lines = f.readlines()
     else:
         lines = path.split('\n')
+    # print("HERE ======" + str(lines))
     keyboard = {}
     for line in lines:
         key, center = line.strip().split()

@@ -178,7 +178,7 @@ def predict_circle26():
     return jsonify({'top_words': [key[0] for key in keys]})
 
 @app.route('/general', methods=['POST'])
-def predict_circle26():
+def predict_general():
     data = request.json
     print(data)
     custom_keyboard = create_keyboard(data["keyboard"], useString=True)

@@ -10,13 +10,13 @@ from clustering.TCluster import TCluster
 app = Flask(__name__)
 
 
-keyboard = create_keyboard('data/keyboard2.txt')
-keyboard_circle = create_keyboard('data/keyboard_circle.txt')
-keyboard_circle_alpha = create_keyboard('data/keyboard_circle_alphabetical.txt')
+keyboard = create_keyboard('data/keyboard/keyboard2.txt')
+keyboard_circle = create_keyboard('data/keyboard/keyboard_circle.txt')
+keyboard_circle_alpha = create_keyboard('data/keyboard/keyboard_circle_alphabetical.txt')
 
 df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 
-training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
+training_words = df_training['word'].tolist()
 
 # Filter only the words that are alpha
 training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
@@ -129,7 +129,7 @@ def predict_circle_outer():
 @app.route('/test', methods=['POST'])
 def testing():
 
-    df = pd.read_csv('data/collection_v2.csv')
+    df = pd.read_csv('data/user/collection_v2.csv')
     df = df.groupby('word_id')
 
     tc = TCluster()

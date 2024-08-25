@@ -35,7 +35,7 @@ def find_key(coords: tuple, keyboard: dict) -> str:
 
 
 def main():
-    kb = create_keyboard('./data/keyboard.txt')
+    kb = create_keyboard('./data/keyboard/keyboard.txt')
 
     print(kb)
     print(find_key((0.07,1.07), kb))

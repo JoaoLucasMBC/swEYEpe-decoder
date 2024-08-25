@@ -23,7 +23,7 @@ def main():
     # Filter only the words that are alpha
     training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
     
-    keyboard = create_keyboard('../data/keyboard2.txt')
+    keyboard = create_keyboard('../data/keyboard/keyboard2.txt')
 
     # for each word, you have a list of tuples with all the coordinates of the eye while typing that word
     words = {}

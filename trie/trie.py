@@ -2,13 +2,13 @@ import pandas as pd
 
 class Node:
     def __init__(self, letter=None):
-        self.word_end = False
-        self.word = []
-        self.letter = letter
+        self.word_end: bool = False
+        self.word: list[str] = []
+        self.letter: str | None = letter
 
-        self.parent = None
-        self.child = [None]*26
-        self.score = 0
+        self.parent: Node | None = None
+        self.child: list[Node] = [None]*26
+        self.score: float = 0
 
     def __repr__(self):
         return f"<Node | Letter {self.letter} | Score {self.score} | Words [{self.word}] >"

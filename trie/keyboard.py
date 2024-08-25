@@ -1,12 +1,12 @@
 KEY_LENGTH = 0.3
 
 def create_keyboard(path: str, useString: bool = False) -> dict:
-    if (not useString):
+    if not useString:
         with open(path, 'r') as f:
             lines = f.readlines()
     else:
         lines = path.split('\n')
-    # print("HERE ======" + str(lines))
+    
     keyboard = {}
     for line in lines:
         key, center = line.strip().split()
@@ -38,7 +38,7 @@ def find_key(coords: tuple, keyboard: dict) -> str:
 
 
 def main():
-    kb = create_keyboard('./data/keyboard.txt')
+    kb = create_keyboard('./data/keyboard/keyboard.txt')
 
     print(kb)
     print(find_key((0.07,1.07), kb))

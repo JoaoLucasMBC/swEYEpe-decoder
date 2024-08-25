@@ -10,25 +10,20 @@ from clustering.TCluster import TCluster
 app = Flask(__name__)
 
 
-keyboard = create_keyboard('data/keyboard2.txt')
-keyboard_circle = create_keyboard('data/keyboard_circle.txt')
-keyboard_circle_alpha = create_keyboard('data/keyboard_circle_alphabetical.txt')
-different_letters_keyboard = create_keyboard('data/test_letter_differentiation copy.txt')
-keyboard_26_circle = create_keyboard('data/keyboard_26_sections.txt')
+keyboard = create_keyboard('data/keyboard/keyboard2.txt')
+keyboard_circle = create_keyboard('data/keyboard/keyboard_circle.txt')
+keyboard_circle_alpha = create_keyboard('data/keyboard/keyboard_circle_alphabetical.txt')
+
+different_letters_keyboard = create_keyboard('data/keyboard/test_letter_differentiation copy.txt')
+keyboard_26_circle = create_keyboard('data/keyboard/keyboard_26_sections.txt')
 
 df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 
-training_words = df_training['word'].tolist() #+ df_vocab['word'].tolist()
+training_words = df_training['word'].tolist()
 
 # Filter only the words that are alpha
 training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
 
-# phrase_words = []
-# with open("data/phraseWords.txt", 'r', encoding='utf-8') as file:
-#     for line in file:
-#         # Remove punctuation and convert to lowercase
-#         phrase_words.append(line)
-# training_words = training_words + phrase_words
 # Create the trie
 root = Node()
 
@@ -203,7 +198,7 @@ def predict_general():
 @app.route('/test', methods=['POST'])
 def testing():
 
-    df = pd.read_csv('data/collection_v2.csv')
+    df = pd.read_csv('data/user/collection_v2.csv')
     df = df.groupby('word_id')
 
     tc = TCluster()

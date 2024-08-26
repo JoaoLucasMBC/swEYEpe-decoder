@@ -1,7 +1,7 @@
 import pandas as pd
 
 def score_candidates(candidates: dict) -> dict:
-    df = pd.read_csv('../data/vocab.csv')
+    df = pd.read_csv('../data/vocab_final.csv')
 
     final_scores = {}
     for candidate in candidates:

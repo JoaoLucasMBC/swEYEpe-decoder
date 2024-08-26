@@ -2,6 +2,7 @@ from sklearn.cluster import DBSCAN
 import pandas as pd
 import numpy as np
 import json
+import os
 
 from trie.trie import Node
 
@@ -11,10 +12,13 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str='data\\bigram.json'):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str|None=None):
         """
         Constructor for the TCluster class.
         """
+
+        if bigram_path is None:
+            bigram_path = os.path.join('data', 'bigram.json')
 
         # DBSCAN parameters
         self.eps: float = eps
@@ -104,7 +108,7 @@ class TCluster:
 
         # Candidate words that the user typed
         candidates = {}
-
+        
         # For each cluster, update the trie trying to find new candidates
         for key in keys:
             self._update_trie(hold_nodes, candidates, trie, key)
@@ -181,9 +185,15 @@ class TCluster:
                     new_nodes.add(node)
                     node.score = max(node.score, score) # update the score of the node
 
+                    # If the child is a word end, add the word to the candidates
+                    if node.word_end:
+                        for word in node.word:
+                            if word not in candidates:
+                                candidates[word] = (self._calculate_candidate_score(node, word), time)
+
                 # Also, get all the current hold nodes and see if their children includes the character that the user is pointing to
                 for node in hold_nodes:
-                    if node.child[ord(k) - ord('a')] is not None and node.child[ord(k) - ord('a')].letter not in hold_nodes:
+                    if node.child[ord(k) - ord('a')] is not None and node.child[ord(k) - ord('a')] not in hold_nodes:
 
                         # Add the child to the new nodes and update the score
                         child = node.child[ord(k) - ord('a')]
@@ -206,7 +216,7 @@ class TCluster:
                             # Add the child to the new nodes and update the score
                             child = node.child[ord(other.letter) - ord('a')]
                             permutation_nodes.add(child)
-                            child.score = max(child.score, score)
+                            child.score = max(child.score, score) * 0.8 # TESTING APPLYING A SMALL PENALTY FOR PERMUTATIONS
                             
                             if child.word_end:
                                 for word in child.word:
@@ -242,6 +252,7 @@ class TCluster:
     def _linguistic_score(self, word: str) -> float:
         """
         Calculates the linguistic score of a word based on a bigram model.
+        Uses logarithmic probabilities to accentuate differences between small probabilities.
 
         @params:
         word: str - The word to calculate the linguistic score.
@@ -256,7 +267,10 @@ class TCluster:
         # Apply smoothing
         smoothed_prob: float = (word_prob + self.alpha) / (sum(self.context_probs.values()) + self.alpha * (V + 1))
 
-        return smoothed_prob
+        # Calculate the logarithm of the smoothed probability
+        log_prob: float = -np.log(smoothed_prob)
+
+        return log_prob
 
     def _update_candidates(self, candidates: dict, time: float) -> None:
         """

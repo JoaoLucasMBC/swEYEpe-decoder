@@ -17,7 +17,8 @@ keyboard_circle_alpha = create_keyboard('data/keyboard/keyboard_circle_alphabeti
 different_letters_keyboard = create_keyboard('data/keyboard/test_letter_differentiation copy.txt')
 keyboard_26_circle = create_keyboard('data/keyboard/keyboard_26_sections.txt')
 
-df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
+#df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
+df_training = pd.read_csv('data/vocab_final.csv')
 
 training_words = df_training['word'].tolist()
 
@@ -117,14 +118,13 @@ def predict_circle_outer():
     # Filter OUT the points that are in the circle
     points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
                                                                            (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
-    # points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2]
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
 
     tc = TCluster(K=1)
-    tc.fit(df)
+    tc.fit(df, verbose=True)
 
-    keys = tc.predict(keyboard_circle_alpha, root)
+    keys = tc.predict(keyboard_circle_alpha, root, verbose=True)
 
     return jsonify({'top_words': [key[0] for key in keys]})
 

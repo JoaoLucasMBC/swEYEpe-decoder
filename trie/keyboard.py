@@ -1,6 +1,4 @@
-KEY_LENGTH = 0.3
-
-def create_keyboard(path: str, useString: bool = False) -> dict:
+def create_keyboard(path: str, key_length: float = 0.3, useString: bool = False) -> dict:
     if not useString:
         with open(path, 'r') as f:
             lines = f.readlines()
@@ -18,10 +16,10 @@ def create_keyboard(path: str, useString: bool = False) -> dict:
 
         keyboard[key] = (
             (center_x, center_y), # Center (x, y)
-            (center_x - KEY_LENGTH/2, center_y + KEY_LENGTH/2), # Top left
-            (center_x + KEY_LENGTH/2, center_y + KEY_LENGTH/2), # Top right
-            (center_x + KEY_LENGTH/2, center_y - KEY_LENGTH/2), # Bottom right
-            (center_x - KEY_LENGTH/2, center_y - KEY_LENGTH/2)  # Bottom left
+            (center_x - key_length/2, center_y + key_length/2), # Top left
+            (center_x + key_length/2, center_y + key_length/2), # Top right
+            (center_x + key_length/2, center_y - key_length/2), # Bottom right
+            (center_x - key_length/2, center_y - key_length/2)  # Bottom left
         )
     
     return keyboard

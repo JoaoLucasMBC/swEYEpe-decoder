@@ -31,7 +31,7 @@ root = Node()
 for word in training_words:
     insert_key(root, word)
 
-
+custom_keyboard = create_keyboard('data/keyboard/keyboard2.txt')
 
 @app.route('/predict', methods=['POST'])
 def predict_word():
@@ -65,6 +65,14 @@ def predict_cluster():
 
     return jsonify({'top_words': [key[0] for key in keys]})
 
+
+@app.route('/setup', methods=['POST'])
+def setup_keyboard():
+    data = request.json
+    global custom_keyboard 
+    print("Recieved new keyboard!")
+    custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    return jsonify({"hi": "heh"})
 
 @app.route('/circle', methods=['POST'])
 def predict_circle():
@@ -175,8 +183,9 @@ def predict_circle26():
 @app.route('/general', methods=['POST'])
 def predict_general():
     data = request.json
-    print(data)
-    custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    # print(data)
+    # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    
     points = data['gaze_points']
     radius = data['radius'] #0.75
     outerRadius = data['outer_radius']
@@ -190,7 +199,7 @@ def predict_general():
 
     tc = TCluster(K=1)
     tc.fit(df)
-
+    global custom_keyboard
     keys = tc.predict(custom_keyboard, root)
 
     return jsonify({'top_words': [key[0] for key in keys]})

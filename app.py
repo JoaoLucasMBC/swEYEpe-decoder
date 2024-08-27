@@ -32,6 +32,9 @@ for word in training_words:
     insert_key(root, word)
 
 custom_keyboard = create_keyboard('data/keyboard/keyboard2.txt')
+custom_inner_radius = 0
+custom_outer_radius = 0
+custom_center = (0, 0)
 
 @app.route('/predict', methods=['POST'])
 def predict_word():
@@ -70,8 +73,14 @@ def predict_cluster():
 def setup_keyboard():
     data = request.json
     global custom_keyboard 
+    global custom_center
+    global custom_inner_radius
+    global custom_outer_radius
     print("Recieved new keyboard!")
     custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    custom_center = (data['center']['x'], data['center']['y'])
+    custom_inner_radius = data["inner_radius"]
+    custom_outer_radius = data["outer_radius"]
     return jsonify({"hi": "heh"})
 
 @app.route('/circle', methods=['POST'])
@@ -139,7 +148,7 @@ def predict_circle_outer():
 @app.route('/circleSmaller', methods=['POST'])
 def predict_circle_closer_smaller():
     data = request.json
-    print(data)
+    # print(data)
     points = data['gaze_points']
     radius = data['radius'] #0.75
     outerRadius = data['outer_radius']
@@ -187,9 +196,12 @@ def predict_general():
     # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
     
     points = data['gaze_points']
-    radius = data['radius'] #0.75
-    outerRadius = data['outer_radius']
-    center = (data['center']['x'], data['center']['y']) #0.525
+    global custom_outer_radius
+    global custom_inner_radius
+    radius = custom_inner_radius
+    outerRadius = custom_outer_radius
+    global custom_center
+    center = custom_center
 
     # Filter OUT the points that are in the circle
     points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 

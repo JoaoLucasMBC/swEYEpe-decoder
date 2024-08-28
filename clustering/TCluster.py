@@ -12,16 +12,10 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str|None=None, vocab_path: str|None=None):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context_probs:dict[dict] = None, vocab: pd.DataFrame=None):
         """
         Constructor for the TCluster class.
         """
-
-        if bigram_path is None:
-            bigram_path = os.path.join('data', 'bigram.json')
-        
-        if vocab_path is None:
-            vocab_path = os.path.join('data', 'vocab_final.csv')
 
         # DBSCAN parameters
         self.eps: float = eps
@@ -37,17 +31,8 @@ class TCluster:
         self.T: float = T # Time threshold
         self.K: int = K # Number of keys to consider for each cluster
 
-        # Context parameters for sentences bigrams
-        with open(bigram_path, 'r') as f:
-            bigram_probs: dict[dict] = json.load(f)
-        
-        if len(context) < 2:
-            last_two: list[str] = ['<s>', '<s>']
-        else:
-            last_two: list[str] = context[-2:]
-        
-        self.context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
-        self.df = pd.read_csv(vocab_path)
+        self.context_probs: dict[dict] = context_probs
+        self.df = vocab
         
 
 

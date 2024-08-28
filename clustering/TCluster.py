@@ -12,13 +12,16 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str|None=None):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context: list[str]=[], bigram_path: str|None=None, vocab_path: str|None=None):
         """
         Constructor for the TCluster class.
         """
 
         if bigram_path is None:
             bigram_path = os.path.join('data', 'bigram.json')
+        
+        if vocab_path is None:
+            vocab_path = os.path.join('data', 'vocab_final.csv')
 
         # DBSCAN parameters
         self.eps: float = eps
@@ -44,6 +47,7 @@ class TCluster:
             last_two: list[str] = context[-2:]
         
         self.context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
+        self.df = pd.read_csv(vocab_path)
         
 
 
@@ -205,27 +209,7 @@ class TCluster:
                             for word in child.word:
                                 if word not in candidates:
                                     candidates[word] = (self._calculate_candidate_score(child, word), time)
-
-                # Now I need to check the possible permutations of the new nodes
-                permutation_nodes = set()
-
-                for node in new_nodes:
-                    for other in new_nodes:
-                        if node.letter != other.letter and node.child[ord(other.letter) - ord('a')] is not None:
-
-                            # Add the child to the new nodes and update the score
-                            child = node.child[ord(other.letter) - ord('a')]
-                            permutation_nodes.add(child)
-                            child.score = max(child.score, score) * 0.8 # TESTING APPLYING A SMALL PENALTY FOR PERMUTATIONS
-                            
-                            if child.word_end:
-                                for word in child.word:
-                                    if word not in candidates:
-                                        candidates[word] = (self._calculate_candidate_score(child, word), time)
-
-                # Merge the permutation nodes with the new nodes
-                new_nodes.update(permutation_nodes)
-                                    
+                    
 
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
@@ -247,7 +231,7 @@ class TCluster:
             score += node.score
             node = node.parent
 
-        return score * self._linguistic_score(word)
+        return score * self._linguistic_score(word) * self._frequency_score(word)
     
     def _linguistic_score(self, word: str) -> float:
         """
@@ -271,6 +255,24 @@ class TCluster:
         log_prob: float = -np.log(smoothed_prob)
 
         return log_prob
+    
+    def _frequency_score(self, word: str) -> float:
+        """
+        Returns the log of the frequency of the word based on the vocab.csv file.
+        
+        @params:
+        word: str - The word to calculate the frequency score.
+        """
+
+        # Filter the word and get the frequency
+        freq = self.df[self.df['word'] == word]['log_count']
+
+        # If the word is not in the vocabulary, return 0
+        if freq.empty:
+            return 0
+        
+        # TESTING
+        return 1 / (1 + np.exp(-freq.values[0]))
 
     def _update_candidates(self, candidates: dict, time: float) -> None:
         """

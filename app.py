@@ -7,6 +7,9 @@ from trie.predict import predict
 
 from clustering.TCluster import TCluster
 
+import os
+import json
+
 app = Flask(__name__)
 
 
@@ -35,6 +38,14 @@ custom_keyboard = create_keyboard('data/keyboard/keyboard2.txt')
 custom_inner_radius = 0
 custom_outer_radius = 0
 custom_center = (0, 0)
+
+bigram_path = os.path.join('data', 'bigram.json')
+# Context parameters for sentences bigrams
+with open(bigram_path, 'r') as f:
+    bigram_probs: dict[dict] = json.load(f)
+
+vocab_path = os.path.join('data', 'vocab_final.csv')
+vocab = pd.read_csv(vocab_path)
 
 @app.route('/predict', methods=['POST'])
 def predict_word():
@@ -209,7 +220,16 @@ def predict_general():
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
 
-    tc = TCluster(K=1)
+    context = data.get('context', [])
+    
+    if len(context) < 2:
+        last_two: list[str] = ['<s>', '<s>']
+    else:
+        last_two: list[str] = context[-2:]
+
+    context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
+
+    tc = TCluster(K=1, vocab=vocab, context_probs=context_probs)
     tc.fit(df)
     global custom_keyboard
     keys = tc.predict(custom_keyboard, root)

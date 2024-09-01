@@ -38,6 +38,8 @@ custom_keyboard = create_keyboard('data/keyboard/keyboard2.txt')
 custom_inner_radius = 0
 custom_outer_radius = 0
 custom_center = (0, 0)
+number_of_letters_to_get = 1
+keyboard_shape = ""
 
 bigram_path = os.path.join('data', 'bigram.json')
 # Context parameters for sentences bigrams
@@ -83,15 +85,27 @@ def predict_cluster():
 @app.route('/setup', methods=['POST'])
 def setup_keyboard():
     data = request.json
+    print(data)
     global custom_keyboard 
     global custom_center
     global custom_inner_radius
     global custom_outer_radius
+    global number_of_letters_to_get
+    global keyboard_shape
+    global top_bound, bottom_bound, left_bound, right_bound
     print("Recieved new keyboard!")
+    number_of_letters_to_get = data["k"]
+    keyboard_shape = data["shape"]
     custom_keyboard = create_keyboard(data["keyboard"], useString=True)
     custom_center = (data['center']['x'], data['center']['y'])
     custom_inner_radius = data["inner_radius"]
     custom_outer_radius = data["outer_radius"]
+    # top_bound, bottom_bound, left_bound, right_bound = (data["top_bound"]['x'], data["top_bound"]['y']), data["bottom_bound"], data["left_bound"], data["right_bound"]
+    top_bound = (data["top_bound"]['x'], data["top_bound"]['y'])
+    bottom_bound = (data["bottom_bound"]['x'], data["bottom_bound"]['y'])
+    left_bound = (data["left_bound"]['x'], data["left_bound"]['y'])
+    right_bound = (data["right_bound"]['x'], data["right_bound"]['y'])
+    
     return jsonify({"hi": "heh"})
 
 @app.route('/circle', methods=['POST'])
@@ -162,6 +176,7 @@ def predict_circle_closer_smaller():
     # print(data)
     points = data['gaze_points']
     radius = data['radius'] #0.75
+
     outerRadius = data['outer_radius']
     center = (data['center']['x'], data['center']['y']) #0.525
 
@@ -213,15 +228,23 @@ def predict_general():
     outerRadius = custom_outer_radius
     global custom_center
     center = custom_center
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
+    global number_of_letters_to_get
+    global top_bound, bottom_bound, left_bound, right_bound
+    global keyboard_shape
+    if (keyboard_shape == "circle"):
+        # Filter OUT the points that are in the inner circle and outside the outer circle
+        print("circle")
+        points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
                                                                            (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
+    if (keyboard_shape == "rectangle"):
+        # Filter out points that are not in the rectangle
+        print("rectangle")
+        points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] > left_bound[0]) and (point['x'] < right_bound[0]) and (point['y'] > bottom_bound[1]) and (point['y'] < top_bound[1]))]
+    
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
     context = data.get('context', [])
-    
+    context = data.get('asdfasdfasdf', []) # here to not get the context because its breaking the decoder
     if len(context) < 2:
         last_two: list[str] = ['<s>', '<s>']
     else:
@@ -229,7 +252,7 @@ def predict_general():
 
     context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
 
-    tc = TCluster(K=1, vocab=vocab, context_probs=context_probs)
+    tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs)
     tc.fit(df)
     global custom_keyboard
     keys = tc.predict(custom_keyboard, root)

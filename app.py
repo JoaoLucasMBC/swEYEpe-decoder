@@ -47,38 +47,6 @@ with open(bigram_path, 'r') as f:
 vocab_path = os.path.join('data', 'vocab_final.csv')
 vocab = pd.read_csv(vocab_path)
 
-@app.route('/predict', methods=['POST'])
-def predict_word():
-    data = request.json
-
-    points = data['gaze_points']
-
-    points = [(point['x'], point['y'], point['z']) for point in points if point['y'] > 0]
-
-    result = predict(points, keyboard, root)
-
-    print(result)
-
-    return jsonify({'top_words': result})
-
-
-@app.route('/cluster', methods=['POST'])
-def predict_cluster():
-    data = request.json
-
-    points = data['gaze_points']
-
-    points = [(point['x'], point['y'], point['z']) for point in points if point['y'] > 0]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster()
-    tc.fit(df)
-
-    keys = tc.predict(keyboard, root)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
-
 
 @app.route('/setup', methods=['POST'])
 def setup_keyboard():
@@ -92,7 +60,7 @@ def setup_keyboard():
     custom_center = (data['center']['x'], data['center']['y'])
     custom_inner_radius = data["inner_radius"]
     custom_outer_radius = data["outer_radius"]
-    return jsonify({"hi": "heh"})
+    return jsonify({"message": "setup done!"})
 
 @app.route('/circle', methods=['POST'])
 def predict_circle():
@@ -111,26 +79,6 @@ def predict_circle():
     tc.fit(df)
 
     keys = tc.predict(keyboard_circle, root)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
-
-@app.route('/circleAlpha', methods=['POST'])
-def predict_circle_alpha():
-    data = request.json
-
-    points = data['gaze_points']
-    radius = data['radius'] #0.75
-    center = (data['center']['x'], data['center']['y']) #0.525
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster(K=1)
-    tc.fit(df)
-
-    keys = tc.predict(keyboard_circle_alpha, root)
 
     return jsonify({'top_words': [key[0] for key in keys]})
 
@@ -153,50 +101,6 @@ def predict_circle_outer():
     tc.fit(df, verbose=True)
 
     keys = tc.predict(keyboard_circle_alpha, root, verbose=True)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
-
-@app.route('/circleSmaller', methods=['POST'])
-def predict_circle_closer_smaller():
-    data = request.json
-    # print(data)
-    points = data['gaze_points']
-    radius = data['radius'] #0.75
-    outerRadius = data['outer_radius']
-    center = (data['center']['x'], data['center']['y']) #0.525
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
-                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster(K=1)
-    tc.fit(df)
-
-    keys = tc.predict(different_letters_keyboard, root)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
-
-@app.route('/circle26', methods=['POST'])
-def predict_circle26():
-    data = request.json
-    print(data)
-    points = data['gaze_points']
-    radius = data['radius'] #0.75
-    outerRadius = data['outer_radius']
-    center = (data['center']['x'], data['center']['y']) #0.525
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
-                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster(K=1)
-    tc.fit(df)
-
-    keys = tc.predict(keyboard_26_circle, root)
 
     return jsonify({'top_words': [key[0] for key in keys]})
 
@@ -229,12 +133,19 @@ def predict_general():
 
     context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
 
-    tc = TCluster(K=1, vocab=vocab, context_probs=context_probs)
-    tc.fit(df)
-    global custom_keyboard
-    keys = tc.predict(custom_keyboard, root)
+    try:
+        tc = TCluster(K=1, vocab=vocab, context_probs=context_probs)
+        tc.fit(df)
+        global custom_keyboard
+        keys = tc.predict(custom_keyboard, root)
 
-    return jsonify({'top_words': [key[0] for key in keys]})
+        return jsonify({'top_words': [key[0] for key in keys]})
+    except:
+        return jsonify({'top_words': ["i", "a", "is"]})
+
+
+
+
 
 @app.route('/test', methods=['POST'])
 def testing():

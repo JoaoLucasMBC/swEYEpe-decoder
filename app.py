@@ -233,12 +233,12 @@ def predict_general():
     global keyboard_shape
     if (keyboard_shape == "circle"):
         # Filter OUT the points that are in the inner circle and outside the outer circle
-        print("circle")
+        # print("circle")
         points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
                                                                            (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
     if (keyboard_shape == "rectangle"):
         # Filter out points that are not in the rectangle
-        print("rectangle")
+        # print("rectangle")
         points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] > left_bound[0]) and (point['x'] < right_bound[0]) and (point['y'] > bottom_bound[1]) and (point['y'] < top_bound[1]))]
     
 

@@ -1,4 +1,4 @@
-def create_keyboard(path: str, key_length: float = 0.3, useString: bool = False) -> dict:
+def create_keyboard(path: str, key_length: float = 0.12, useString: bool = False) -> dict:
     if not useString:
         with open(path, 'r') as f:
             lines = f.readlines()

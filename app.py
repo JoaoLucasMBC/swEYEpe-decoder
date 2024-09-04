@@ -61,6 +61,10 @@ def setup_keyboard():
     global number_of_letters_to_get
     global keyboard_shape
     global top_bound, bottom_bound, left_bound, right_bound
+    right_bound = (data['right_bound']['x'], data['right_bound']['y'])
+    left_bound = (data['left_bound']['x'], data['left_bound']['y'])
+    top_bound = (data['top_bound']['x'], data['top_bound']['y'])
+    bottom_bound = (data['bottom_bound']['x'], data['bottom_bound']['y'])
     print("Recieved new keyboard!")
     number_of_letters_to_get = data["k"]
     keyboard_shape = data["shape"]
@@ -115,7 +119,7 @@ def predict_circle_outer():
 @app.route('/general', methods=['POST'])
 def predict_general():
     data = request.json
-    # print(data)
+    print(data)
     # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
     
     points = data['gaze_points']
@@ -137,7 +141,8 @@ def predict_general():
         # Filter out points that are not in the rectangle
         # print("rectangle")
         points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] > left_bound[0]) and (point['x'] < right_bound[0]) and (point['y'] > bottom_bound[1]) and (point['y'] < top_bound[1]))]
-    
+    print("post-filter data")
+    print(points)
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
     context = data.get('context', [])
@@ -150,10 +155,12 @@ def predict_general():
     context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
 
     try:
-        tc = TCluster(K=1, vocab=vocab, context_probs=context_probs)
+        tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs)
         tc.fit(df)
         global custom_keyboard
         keys = tc.predict(custom_keyboard, root)
+        if (keys == None):
+            return jsonify({'top_words': ["i", "a", "is"]})
 
         return jsonify({'top_words': [key[0] for key in keys]})
     except:

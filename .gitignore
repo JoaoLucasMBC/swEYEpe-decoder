@@ -168,3 +168,4 @@ en_wikinews.txt
 data/corpus/coca-samples-text
 .vs/
 ~*
+/test

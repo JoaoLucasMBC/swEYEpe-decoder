@@ -53,7 +53,7 @@ vocab = pd.read_csv(vocab_path)
 @app.route('/setup', methods=['POST'])
 def setup_keyboard():
     data = request.json
-    print(data)
+    # print(data)
     global custom_keyboard 
     global custom_center
     global custom_inner_radius

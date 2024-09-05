@@ -12,7 +12,7 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=1, K: int=3, context_probs:dict[dict] = None, vocab: pd.DataFrame=None):
+    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=2, K: int=3, context_probs:dict[dict] = None, vocab: pd.DataFrame=None):
         """
         Constructor for the TCluster class.
         """
@@ -73,7 +73,7 @@ class TCluster:
         Q3 = self.X['label'].value_counts().quantile(0.75)
         IQR = Q3 - Q1
 
-        self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 3 * IQR]
+        self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 1.5 * IQR]
 
         # Update the labels
         self.labels_ = self.X['label'].tolist()
@@ -117,6 +117,9 @@ class TCluster:
         # Calculate the position of the centroid of each cluster
         centroids = self.X.groupby('label')[['x', 'y']].mean()
 
+        # The last time that the user pointed to a key in the cluster
+        times = self.X.groupby('label')['time'].max()
+
         keys = []
 
         # For each cluster, save all distances
@@ -127,15 +130,15 @@ class TCluster:
             for key, points in keyboard.items():
                 center, top_left, top_right, bottom_right, bottom_left = points
                 distance = np.linalg.norm(np.array(centroid) - np.array(center))
-                distances[key] = distance
+                distances[key] = (distance, times[cluster_id])
 
             # Get the K (hyper-parameter) smallest distances
-            sorted_distances = sorted(distances.items(), key=lambda x: x[1])
+            sorted_distances = sorted(distances.items(), key=lambda x: x[1][0])
             keys.append(sorted_distances[:self.K])
 
             if verbose:
-                print(f"Cluster {cluster_id}: " + ', '.join([f"{key} ({distance:.2f})" for key, distance in sorted_distances[:self.K]]))
-
+                print(f"Cluster {cluster_id}: " + ', '.join([f"{key} ({distance:.2f})" for key, (distance, time) in sorted_distances[:self.K]]))
+        
         return keys
 
     def _update_trie(self, hold_nodes: set, candidates: dict, trie: Node, keys: list) -> None:
@@ -156,11 +159,11 @@ class TCluster:
 
         # For each one of the keys
         for val in keys:
-            time = 0 #FIXME
+            time = val[1][1]
             key = val[0] # the string of the key
 
             # Calculate the score of the key (exponential decay)
-            score =  np.exp(-self.alpha*val[1])
+            score =  np.exp(-self.alpha*val[1][0])
 
             key = key.lower()
 
@@ -195,7 +198,6 @@ class TCluster:
                                 if word not in candidates:
                                     candidates[word] = (self._calculate_candidate_score(child, word), time)
                     
-
         # Merge the hold nodes with the new nodes
         hold_nodes.update(new_nodes)
 
@@ -248,7 +250,7 @@ class TCluster:
         @params:
         word: str - The word to calculate the frequency score.
         """
-
+        
         # Filter the word and get the frequency
         freq = self.df[self.df['word'] == word]['log_count']
 

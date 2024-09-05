@@ -7,3 +7,4 @@ ipykernel
 matplotlib
 python-dotenv
 google-generativeai
+tqdm

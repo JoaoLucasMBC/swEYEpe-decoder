@@ -41,7 +41,7 @@ custom_center = (0, 0)
 number_of_letters_to_get = 1
 keyboard_shape = ""
 
-bigram_path = os.path.join('data', 'bigram.json')
+bigram_path = os.path.join('data', 'bigram_v2.json')
 # Context parameters for sentences bigrams
 with open(bigram_path, 'r') as f:
     bigram_probs: dict[dict] = json.load(f)
@@ -119,7 +119,7 @@ def predict_circle_outer():
 @app.route('/general', methods=['POST'])
 def predict_general():
     data = request.json
-    print(data)
+    #print(data)
     # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
     
     points = data['gaze_points']
@@ -141,8 +141,8 @@ def predict_general():
         # Filter out points that are not in the rectangle
         # print("rectangle")
         points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] > left_bound[0]) and (point['x'] < right_bound[0]) and (point['y'] > bottom_bound[1]) and (point['y'] < top_bound[1]))]
-    print("post-filter data")
-    print(points)
+    #print("post-filter data")
+    #print(points)
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
     context = data.get('context', [])

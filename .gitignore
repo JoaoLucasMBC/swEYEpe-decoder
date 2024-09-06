@@ -169,3 +169,4 @@ data/corpus/coca-samples-text
 .vs/
 ~*
 /test
+data/bigram_v2.json

@@ -6,6 +6,7 @@ from trie.trie import Node, insert_key
 from trie.predict import predict
 
 from clustering.TCluster import TCluster
+from datetime import datetime
 
 import os
 import json
@@ -53,6 +54,9 @@ vocab = pd.read_csv(vocab_path)
 @app.route('/setup', methods=['POST'])
 def setup_keyboard():
     data = request.json
+    # t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
+    # with open("layout.txt", 'w') as file:
+    #     file.write(str(data))
     # print(data)
     global custom_keyboard 
     global custom_center

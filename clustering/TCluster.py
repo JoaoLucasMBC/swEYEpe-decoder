@@ -103,7 +103,10 @@ class TCluster:
             self._update_trie(hold_nodes, candidates, trie, key)
 
         # Return the top 3 word candidates
-        return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
+        top3 = list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
+
+        # Rank top 3 candidates based on linguistic score
+        return list(sorted(top3, key=lambda x: self._linguistic_score(x[0]), reverse=True))
 
     def _find_key_centroid(self, keyboard, verbose: bool=False) -> list:
         """
@@ -218,7 +221,7 @@ class TCluster:
             score += node.score
             node = node.parent
 
-        return score * self._linguistic_score(word) * self._frequency_score(word)
+        return score * self._frequency_score(word)
     
     def _linguistic_score(self, word: str) -> float:
         """

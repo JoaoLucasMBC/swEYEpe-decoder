@@ -150,7 +150,7 @@ def predict_general():
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
     context = data.get('context', [])
-    context = data.get('asdfasdfasdf', []) # here to not get the context because its breaking the decoder
+    #context = data.get('asdfasdfasdf', []) # here to not get the context because its breaking the decoder
     if len(context) < 2:
         last_two: list[str] = ['<s>', '<s>']
     else:

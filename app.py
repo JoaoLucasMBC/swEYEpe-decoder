@@ -49,14 +49,17 @@ with open(bigram_path, 'r') as f:
 
 vocab_path = os.path.join('data', 'vocab_final.csv')
 vocab = pd.read_csv(vocab_path)
+t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
 
 
 @app.route('/setup', methods=['POST'])
 def setup_keyboard():
     data = request.json
+    global t
+    t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
     # t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
-    # with open("layout.txt", 'w') as file:
-    #     file.write(str(data))
+    with open("layout.txt", 'w') as file:
+        file.write(str(data))
     # print(data)
     global custom_keyboard 
     global custom_center
@@ -157,14 +160,20 @@ def predict_general():
         last_two: list[str] = context[-2:]
 
     context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
-
+    
     try:
-        tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs)
+        tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs, eps=0.07)
+        # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
         tc.fit(df)
         global custom_keyboard
         keys = tc.predict(custom_keyboard, root)
         if (keys == None):
             return jsonify({'top_words': ["i", "a", "is"]})
+            global t
+        with open("eyeData/eyeTracking" + t + ".txt", 'a') as file:
+            file.write(str(data) + '\n')
+            file.write(str({'top_words': [key[0] for key in keys]}) + "\n")
+            # file.write(str(contextReal) + "\n")
 
         return jsonify({'top_words': [key[0] for key in keys]})
     except:

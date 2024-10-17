@@ -77,6 +77,11 @@ class TCluster:
 
         # Update the labels
         self.labels_ = self.X['label'].tolist()
+    
+    def output_centroids(self):
+        centroids = self.X.groupby('label')[['x', 'y']].mean()
+        # print(centroids)
+        return centroids
 
 
 

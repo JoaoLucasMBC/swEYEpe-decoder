@@ -6,7 +6,10 @@ from trie.trie import Node, insert_key
 from trie.predict import predict
 
 from clustering.TCluster import TCluster
+
 from datetime import datetime
+
+from languageContext.LanguageContext import LanguageContext
 
 import os
 import json
@@ -41,6 +44,8 @@ custom_outer_radius = 0
 custom_center = (0, 0)
 number_of_letters_to_get = 1
 keyboard_shape = ""
+
+LC = LanguageContext()
 
 bigram_path = os.path.join('data', 'bigram_v2.json')
 # Context parameters for sentences bigrams
@@ -160,23 +165,44 @@ def predict_general():
         last_two: list[str] = context[-2:]
 
     context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
-    
+
+    context = data.get('context', [])
+    global LC
+
+
+
+    tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs, eps=0.07)
+    # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
+    tc.fit(df)
+    global custom_keyboard
+    gaze_scores = tc.predict(custom_keyboard, root, allProbs = True)
+    probs = [(key[0], float(key[1][0])) for key in gaze_scores]
+    just_p = [key[1] for key in probs]
+    tot = sum(just_p)
+    gaze_probs = [(key[0], key[1]/tot) for key in probs]
+
+    con = ""
+    for word in context:
+        con += word + " "
+    print(con.strip())
+    if (con.strip() != ""):
+        language_scores = LC.words_and_probs(con.strip().lower())
+        keys = LC.combine_probs(gaze_probs = gaze_probs, language_probs = language_scores, language_weight = 0.3)
+    else:
+        keys = gaze_scores[:3]
+    if (keys == None):
+        return jsonify({'top_words': ["i", "a", "is"]})
     try:
-        tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs, eps=0.07)
-        # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
-        tc.fit(df)
-        global custom_keyboard
-        keys = tc.predict(custom_keyboard, root)
-        if (keys == None):
-            return jsonify({'top_words': ["i", "a", "is"]})
-            global t
+        
+        global t
         with open("eyeData/eyeTracking" + t + ".txt", 'a') as file:
             file.write(str(data) + '\n')
             file.write(str({'top_words': [key[0] for key in keys]}) + "\n")
             # file.write(str(contextReal) + "\n")
 
         return jsonify({'top_words': [key[0] for key in keys]})
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'top_words': ["i", "a", "is"]})
 
 

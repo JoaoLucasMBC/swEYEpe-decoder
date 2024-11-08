@@ -12,7 +12,13 @@ class TCluster:
     uses the trie to predict the words that the user is gaze-typing.
     """
 
-    def __init__(self, eps: float=0.1, min_samples: int=5, alpha: float=1, T: float=2, K: int=3, context_probs:dict[dict] = None, vocab: pd.DataFrame=None):
+    def __init__(self, eps: float=0.1, 
+                min_samples: int=5, 
+                alpha: float=1, 
+                T: float=2, 
+                K: int=3, 
+                context_probs:dict[dict] = None, 
+                vocab: pd.DataFrame=None):
         """
         Constructor for the TCluster class.
         """
@@ -33,8 +39,6 @@ class TCluster:
 
         self.context_probs: dict[dict] = context_probs
         self.df = vocab
-        
-
 
 
     def fit(self, X: pd.DataFrame, verbose: bool=False):
@@ -85,7 +89,7 @@ class TCluster:
 
 
 
-    def predict(self, keyboard: dict[str, float], trie: Node, verbose: bool=False) -> list:
+    def predict(self, keyboard: dict[str, float], trie: Node, verbose: bool=False, k: int=3, allProbs = False) -> list:
         """
         Predicts the words that the user is gaze-typing.
 
@@ -107,8 +111,11 @@ class TCluster:
         for key in keys:
             self._update_trie(hold_nodes, candidates, trie, key)
 
+        if (allProbs):
+            return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse = True))
+
         # Return the top 3 word candidates
-        return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:3]
+        return list(sorted(candidates.items(), key=lambda x: x[1][0], reverse=True))[:k]
 
     def _find_key_centroid(self, keyboard, verbose: bool=False) -> list:
         """

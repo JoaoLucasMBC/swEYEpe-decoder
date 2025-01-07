@@ -1,18 +1,18 @@
+# Standard library imports
+import json
+import os
+from datetime import datetime
+
+# Third-party imports
 from flask import Flask, request, jsonify
 import pandas as pd
 
+# Local imports
 from trie.keyboard import create_keyboard
 from trie.trie import Node, insert_key
 from trie.predict import predict
-
 from clustering.TCluster import TCluster
-
-from datetime import datetime
-
 from languageContext.LanguageContext import LanguageContext
-
-import os
-import json
 
 app = Flask(__name__)
 
@@ -20,7 +20,6 @@ app = Flask(__name__)
 keyboard = create_keyboard('data/keyboard/keyboard2.txt')
 keyboard_circle = create_keyboard('data/keyboard/keyboard_circle.txt')
 keyboard_circle_alpha = create_keyboard('data/keyboard/keyboard_circle_alphabetical.txt')
-
 different_letters_keyboard = create_keyboard('data/keyboard/test_letter_differentiation copy.txt')
 keyboard_26_circle = create_keyboard('data/keyboard/keyboard_26_sections.txt')
 
@@ -85,48 +84,6 @@ def setup_keyboard():
     custom_inner_radius = data["inner_radius"]
     custom_outer_radius = data["outer_radius"]
     return jsonify({"message": "setup done!"})
-
-@app.route('/circle', methods=['POST'])
-def predict_circle():
-    data = request.json
-
-    points = data['gaze_points']
-    radius = data['radius']
-    center = (data['center']['x'], data['center']['y'])
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if (point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster(K=1)
-    tc.fit(df)
-
-    keys = tc.predict(keyboard_circle, root)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
-
-@app.route('/circleOuter', methods=['POST'])
-def predict_circle_outer():
-    data = request.json
-    print(jsonify(data))
-    points = data['gaze_points']
-    radius = data['radius'] #0.75
-    outerRadius = data['outer_radius']
-    center = (data['center']['x'], data['center']['y']) #0.525
-
-    # Filter OUT the points that are in the circle
-    points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
-                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    tc = TCluster(K=1)
-    tc.fit(df, verbose=True)
-
-    keys = tc.predict(keyboard_circle_alpha, root, verbose=True)
-
-    return jsonify({'top_words': [key[0] for key in keys]})
 
 @app.route('/general', methods=['POST'])
 def predict_general():
@@ -206,9 +163,6 @@ def predict_general():
         return jsonify({'top_words': ["i", "a", "is"]})
 
 
-
-
-
 @app.route('/test', methods=['POST'])
 def testing():
 
@@ -231,9 +185,6 @@ def testing():
         results.append({'word_id': word_id, 'keys': keys})
     
     return jsonify({'results': results})
-
-
-
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

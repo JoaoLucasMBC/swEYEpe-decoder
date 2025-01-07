@@ -16,13 +16,6 @@ from languageContext.LanguageContext import LanguageContext
 
 app = Flask(__name__)
 
-
-keyboard = create_keyboard('data/keyboard/keyboard2.txt')
-keyboard_circle = create_keyboard('data/keyboard/keyboard_circle.txt')
-keyboard_circle_alpha = create_keyboard('data/keyboard/keyboard_circle_alphabetical.txt')
-different_letters_keyboard = create_keyboard('data/keyboard/test_letter_differentiation copy.txt')
-keyboard_26_circle = create_keyboard('data/keyboard/keyboard_26_sections.txt')
-
 #df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
 df_training = pd.read_csv('data/vocab_final.csv')
 
@@ -114,21 +107,10 @@ def predict_general():
     #print(points)
 
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-    context = data.get('context', [])
-    context = data.get('asdfasdfasdf', []) # here to not get the context because its breaking the decoder
-    if len(context) < 2:
-        last_two: list[str] = ['<s>', '<s>']
-    else:
-        last_two: list[str] = context[-2:]
-
-    context_probs: dict[dict] = bigram_probs.get(' '.join(last_two), {})
 
     context = data.get('context', [])
     global LC
-
-
-
-    tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=context_probs, eps=0.07)
+    tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=None, eps=0.07)
     # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
     tc.fit(df)
     global custom_keyboard

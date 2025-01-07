@@ -230,7 +230,7 @@ class TCluster:
             score += node.score
             node = node.parent
 
-        return score * self._linguistic_score(word) * self._frequency_score(word)
+        return score #* self._linguistic_score(word) * self._frequency_score(word)
     
     def _linguistic_score(self, word: str) -> float:
         """

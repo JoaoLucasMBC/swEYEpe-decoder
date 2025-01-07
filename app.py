@@ -37,12 +37,7 @@ custom_center = (0, 0)
 number_of_letters_to_get = 1
 keyboard_shape = ""
 
-LC = LanguageContext()
-
-bigram_path = os.path.join('data', 'bigram_v2.json')
-# Context parameters for sentences bigrams
-with open(bigram_path, 'r') as f:
-    bigram_probs: dict[dict] = json.load(f)
+language_context = LanguageContext()
 
 vocab_path = os.path.join('data', 'vocab_final.csv')
 vocab = pd.read_csv(vocab_path)
@@ -109,7 +104,7 @@ def predict_general():
     df = pd.DataFrame(points, columns=['x', 'y', 'time'])
 
     context = data.get('context', [])
-    global LC
+    global language_context
     tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=None, eps=0.07)
     # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
     tc.fit(df)
@@ -125,8 +120,8 @@ def predict_general():
         con += word + " "
     print(con.strip())
     if (con.strip() != ""):
-        language_scores = LC.words_and_probs(con.strip().lower())
-        keys = LC.combine_probs(gaze_probs = gaze_probs, language_probs = language_scores, language_weight = 0.3)
+        language_scores = language_context.words_and_probs(con.strip().lower())
+        keys = language_context.combine_probs(gaze_probs = gaze_probs, language_probs = language_scores, language_weight = 0.3)
     else:
         keys = gaze_scores[:3]
     if (keys == None):

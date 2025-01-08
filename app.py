@@ -50,8 +50,14 @@ def setup_keyboard():
     global t
     t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
     # t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
-    with open("layout.txt", 'w') as file:
-        file.write(str(data))
+    try:
+        with open("layout.txt", 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        print(f"Successfully saved data to {filepath}")
+    except Exception as e:
+        print(f"Error saving JSON data: {str(e)}")
+    # with open("layout.txt", 'w') as file:
+    #     file.write(str(data))
     # print(data)
     global custom_keyboard 
     global custom_center
@@ -78,6 +84,12 @@ def predict_general():
     data = request.json
     #print(data)
     # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+    try:
+        with open("incoming.txt", 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        print(f"Successfully saved data to {filepath}")
+    except Exception as e:
+        print(f"Error saving JSON data: {str(e)}")
     
     points = data['gaze_points']
     global custom_outer_radius

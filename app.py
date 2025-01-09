@@ -50,7 +50,7 @@ class EyeTypingApp:
         # Load vocabulary once
         vocab_path = os.path.join('data', 'vocab_final.csv')
         self.vocab_df = pd.read_csv(vocab_path)
-        self.vocab = self.vocab_df  # Keep reference for TCluster
+        self.vocab = self.vocab_df  # Keep reference for TCluster, not really necessary right now because TC uses it for frequency, which is currently not used.
         self.training_words = self._load_training_words()
         
         # Initialize models
@@ -177,7 +177,7 @@ class EyeTypingApp:
             return self.language_context.combine_probs(
                 gaze_probs=gaze_probs,
                 language_probs=language_scores,
-                language_weight=0.3
+                language_weight=0.5
             )
         return gaze_scores[:3]
 
@@ -192,9 +192,39 @@ class EyeTypingApp:
     def _save_prediction_results(self, data: dict, predictions: List):
         """Save prediction results and eye tracking data."""
         try:
-            with open(f"eyeData/eyeTracking{self.session_timestamp}.txt", 'a') as f:
-                f.write(f"{json.dumps(data)}\n")
-                f.write(f"{json.dumps({'top_words': [key[0] for key in predictions]})}\n")
+            # Create directory if it doesn't exist
+            os.makedirs('eyeData', exist_ok=True)
+            
+            # Construct the full entry with timestamp
+            entry = {
+                'timestamp': datetime.now().isoformat(),
+                'input_data': data,
+                'predictions': {
+                    'top_words': [key[0] for key in predictions],
+                    'scores': [float(key[1][0]) if isinstance(key[1], tuple) else float(key[1]) for key in predictions]
+                }
+            }
+
+            filename = f"eyeData/eyeTracking{self.session_timestamp}.json"
+            
+            # Load existing data if file exists
+            existing_data = []
+            if os.path.exists(filename):
+                try:
+                    with open(filename, 'r') as f:
+                        existing_data = json.load(f)
+                except json.JSONDecodeError:
+                    print(f"Warning: Could not parse existing file {filename}, starting fresh")
+            
+            # Append new entry
+            if not isinstance(existing_data, list):
+                existing_data = []
+            existing_data.append(entry)
+            
+            # Write back to file
+            with open(filename, 'w') as f:
+                json.dump(existing_data, f, indent=2)
+                
         except Exception as e:
             print(f"Error saving prediction results: {str(e)}")
 

@@ -33,7 +33,7 @@ def main():
     base_url = "http://localhost:5000"  # Adjust port if needed
     setup_endpoint = f"{base_url}/setup"
     general_endpoint = f"{base_url}/general"
-    delay_seconds = 3
+    delay_seconds = 1
 
     # Load JSON data
     setup_data = load_json_file(Path("layout.txt"))

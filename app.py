@@ -1,179 +1,225 @@
-# Standard library imports
+"""
+VR Eye-Typing Flask Application
+Handles eye tracking data processing and word prediction for VR typing interface.
+"""
+
 import json
 import os
 from datetime import datetime
+from typing import List, Tuple, Dict, Optional
+from dataclasses import dataclass
 
-# Third-party imports
 from flask import Flask, request, jsonify
 import pandas as pd
 
-# Local imports
 from trie.keyboard import create_keyboard
 from trie.trie import Node, insert_key
-from trie.predict import predict
 from clustering.TCluster import TCluster
 from languageContext.LanguageContext import LanguageContext
 
-app = Flask(__name__)
+# Type aliases
+Point = Tuple[float, float, float]
+GazePoint = Dict[str, float]
 
-#df_training = pd.read_excel('data/wordFrequency.xlsx', sheet_name='4 forms (219k)')
-df_training = pd.read_csv('data/vocab_final.csv')
+@dataclass
+class KeyboardConfig:
+    """Configuration for keyboard layout and parameters."""
+    shape: str
+    center: Tuple[float, float]
+    inner_radius: float
+    outer_radius: float
+    k_letters: int  # number of letters to get
+    bounds: Dict[str, Tuple[float, float]]
 
-training_words = df_training['word'].tolist()
+class EyeTypingApp:
+    def __init__(self):
+        self.app = Flask(__name__)
+        self.setup_routes()
+        self.initialize_models()
+        self.keyboard_config = None
+        self.session_timestamp = None
 
-# Filter only the words that are alpha
-training_words = [str(word).lower() for word in training_words if str(word).isalpha()]
+    def setup_routes(self):
+        """Configure Flask routes."""
+        self.app.route('/setup', methods=['POST'])(self.setup_keyboard)
+        self.app.route('/general', methods=['POST'])(self.predict_general)
+        self.app.route('/test', methods=['POST'])(self.testing)
 
-# Create the trie
-root = Node()
-
-for word in training_words:
-    insert_key(root, word)
-
-custom_keyboard = create_keyboard('data/keyboard/keyboard2.txt')
-custom_inner_radius = 0
-custom_outer_radius = 0
-custom_center = (0, 0)
-number_of_letters_to_get = 1
-keyboard_shape = ""
-
-language_context = LanguageContext()
-
-vocab_path = os.path.join('data', 'vocab_final.csv')
-vocab = pd.read_csv(vocab_path)
-t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
-
-
-@app.route('/setup', methods=['POST'])
-def setup_keyboard():
-    data = request.json
-    global t
-    t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
-    # t = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
-    try:
-        with open("layout.txt", 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-        print(f"Successfully saved data to {filepath}")
-    except Exception as e:
-        print(f"Error saving JSON data: {str(e)}")
-    # with open("layout.txt", 'w') as file:
-    #     file.write(str(data))
-    # print(data)
-    global custom_keyboard 
-    global custom_center
-    global custom_inner_radius
-    global custom_outer_radius
-    global number_of_letters_to_get
-    global keyboard_shape
-    global top_bound, bottom_bound, left_bound, right_bound
-    right_bound = (data['right_bound']['x'], data['right_bound']['y'])
-    left_bound = (data['left_bound']['x'], data['left_bound']['y'])
-    top_bound = (data['top_bound']['x'], data['top_bound']['y'])
-    bottom_bound = (data['bottom_bound']['x'], data['bottom_bound']['y'])
-    print("Recieved new keyboard!")
-    number_of_letters_to_get = data["k"]
-    keyboard_shape = data["shape"]
-    custom_keyboard = create_keyboard(data["keyboard"], useString=True)
-    custom_center = (data['center']['x'], data['center']['y'])
-    custom_inner_radius = data["inner_radius"]
-    custom_outer_radius = data["outer_radius"]
-    return jsonify({"message": "setup done!"})
-
-@app.route('/general', methods=['POST'])
-def predict_general():
-    data = request.json
-    #print(data)
-    # custom_keyboard = create_keyboard(data["keyboard"], useString=True)
-    try:
-        with open("incoming.txt", 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-        print(f"Successfully saved data to {filepath}")
-    except Exception as e:
-        print(f"Error saving JSON data: {str(e)}")
-    
-    points = data['gaze_points']
-    global custom_outer_radius
-    global custom_inner_radius
-    radius = custom_inner_radius
-    outerRadius = custom_outer_radius
-    global custom_center
-    center = custom_center
-    global number_of_letters_to_get
-    global top_bound, bottom_bound, left_bound, right_bound
-    global keyboard_shape
-    if (keyboard_shape == "circle"):
-        # Filter OUT the points that are in the inner circle and outside the outer circle
-        # print("circle")
-        points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] - center[0])**2 + (point['y'] - center[1])**2 > radius**2 and 
-                                                                           (point['x'] - center[0])**2 + (point['y'] - center[1])**2 < outerRadius**2)]
-    if (keyboard_shape == "rectangle"):
-        # Filter out points that are not in the rectangle
-        # print("rectangle")
-        points = [(point['x'], point['y'], point['z']) for point in points if ((point['x'] > left_bound[0]) and (point['x'] < right_bound[0]) and (point['y'] > bottom_bound[1]) and (point['y'] < top_bound[1]))]
-    #print("post-filter data")
-    #print(points)
-
-    df = pd.DataFrame(points, columns=['x', 'y', 'time'])
-
-    context = data.get('context', [])
-    global language_context
-    tc = TCluster(K=number_of_letters_to_get, vocab=vocab, context_probs=None, eps=0.07)
-    # tc = TCluster(K=number_of_letters_to_get, vocab=vocab)
-    tc.fit(df)
-    global custom_keyboard
-    gaze_scores = tc.predict(custom_keyboard, root, allProbs = True)
-    probs = [(key[0], float(key[1][0])) for key in gaze_scores]
-    just_p = [key[1] for key in probs]
-    tot = sum(just_p)
-    gaze_probs = [(key[0], key[1]/tot) for key in probs]
-
-    con = ""
-    for word in context:
-        con += word + " "
-    print(con.strip())
-    if (con.strip() != ""):
-        language_scores = language_context.words_and_probs(con.strip().lower())
-        keys = language_context.combine_probs(gaze_probs = gaze_probs, language_probs = language_scores, language_weight = 0.3)
-    else:
-        keys = gaze_scores[:3]
-    if (keys == None):
-        return jsonify({'top_words': ["i", "a", "is"]})
-    try:
+    def initialize_models(self):
+        """Initialize ML models and data structures."""
+        # Load vocabulary once
+        vocab_path = os.path.join('data', 'vocab_final.csv')
+        self.vocab_df = pd.read_csv(vocab_path)
+        self.vocab = self.vocab_df  # Keep reference for TCluster
+        self.training_words = self._load_training_words()
         
-        global t
-        with open("eyeData/eyeTracking" + t + ".txt", 'a') as file:
-            file.write(str(data) + '\n')
-            file.write(str({'top_words': [key[0] for key in keys]}) + "\n")
-            # file.write(str(contextReal) + "\n")
+        # Initialize models
+        self.root = self._build_trie()
+        self.language_context = LanguageContext()
+        self.custom_keyboard = None
 
-        return jsonify({'top_words': [key[0] for key in keys]})
-    except Exception as e:
-        print(e)
-        return jsonify({'top_words': ["i", "a", "is"]})
+    def _load_training_words(self) -> List[str]:
+        """Process vocabulary into training words."""
+        words = self.vocab_df['word'].tolist()
+        return [str(word).lower() for word in words if str(word).isalpha()]
 
+    def _build_trie(self) -> Node:
+        """Build trie data structure from training words."""
+        root = Node()
+        for word in self.training_words:
+            insert_key(root, word)
+        return root
 
-@app.route('/test', methods=['POST'])
-def testing():
-
-    df = pd.read_csv('data/user/collection_v2.csv')
-    df = df.groupby('word_id')
-
-    tc = TCluster()
-
-    results = []
-
-    for word_id, group in df:
-        group = group[group['y'] > 0]
-
-        if len(group) == 0:
-            continue
+    def setup_keyboard(self):
+        """Handle keyboard setup request."""
+        data = request.json
+        self.session_timestamp = datetime.today().strftime('%Y-%m-%d %H-%M-%S')
         
-        tc.fit(group[['x', 'y', 'time']])
-        keys = tc.predict(keyboard, root)
+        # Save layout configuration
+        self._save_layout_config(data)
+        
+        # Update keyboard configuration
+        self.keyboard_config = KeyboardConfig(
+            shape=data["shape"],
+            center=(data['center']['x'], data['center']['y']),
+            inner_radius=data["inner_radius"],
+            outer_radius=data["outer_radius"],
+            k_letters=data["k"],
+            bounds={
+                'top': (data['top_bound']['x'], data['top_bound']['y']),
+                'bottom': (data['bottom_bound']['x'], data['bottom_bound']['y']),
+                'left': (data['left_bound']['x'], data['left_bound']['y']),
+                'right': (data['right_bound']['x'], data['right_bound']['y'])
+            }
+        )
+        
+        # Create keyboard layout
+        self.custom_keyboard = create_keyboard(data["keyboard"], useString=True)
+        
+        return jsonify({"message": "Keyboard setup completed successfully"})
 
-        results.append({'word_id': word_id, 'keys': keys})
-    
-    return jsonify({'results': results})
+    def _save_layout_config(self, data: dict):
+        """Save keyboard layout configuration to file."""
+        try:
+            with open("layout.txt", 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving layout configuration: {str(e)}")
+
+    def _filter_points(self, points: List[GazePoint]) -> List[Point]:
+        """Filter gaze points based on keyboard shape and boundaries."""
+        if self.keyboard_config.shape == "circle":
+            return self._filter_circle_points(points)
+        elif self.keyboard_config.shape == "rectangle":
+            return self._filter_rectangle_points(points)
+        return []
+
+    def _filter_circle_points(self, points: List[GazePoint]) -> List[Point]:
+        """Filter points for circular keyboard layout."""
+        center = self.keyboard_config.center
+        inner_r = self.keyboard_config.inner_radius
+        outer_r = self.keyboard_config.outer_radius
+        
+        return [(p['x'], p['y'], p['z']) for p in points 
+                if (inner_r**2 < (p['x'] - center[0])**2 + (p['y'] - center[1])**2 < outer_r**2)]
+
+    def _filter_rectangle_points(self, points: List[GazePoint]) -> List[Point]:
+        """Filter points for rectangular keyboard layout."""
+        bounds = self.keyboard_config.bounds
+        return [(p['x'], p['y'], p['z']) for p in points 
+                if (bounds['left'][0] < p['x'] < bounds['right'][0] and 
+                    bounds['bottom'][1] < p['y'] < bounds['top'][1])]
+
+    def predict_general(self):
+        """Handle prediction request for eye tracking data."""
+        data = request.json
+        self._save_incoming_data(data)
+        
+        # Process gaze points
+        filtered_points = self._filter_points(data['gaze_points'])
+        if not filtered_points:
+            return jsonify({'top_words': ["i", "a", "is"]})
+            
+        df = pd.DataFrame(filtered_points, columns=['x', 'y', 'time'])
+        
+        # Initialize clustering
+        tc = TCluster(
+            K=self.keyboard_config.k_letters,
+            vocab=self.vocab,
+            context_probs=None,
+            eps=0.07
+        )
+        
+        # Get predictions
+        tc.fit(df)
+        gaze_scores = tc.predict(self.custom_keyboard, self.root, allProbs=True)
+        
+        # Process predictions with language model
+        predictions = self._process_predictions(gaze_scores, data.get('context', []))
+        
+        # Save results
+        self._save_prediction_results(data, predictions)
+        
+        return jsonify({'top_words': [key[0] for key in predictions]})
+
+    def _process_predictions(self, gaze_scores, context):
+        """Process gaze scores with language model context."""
+        # Calculate gaze probabilities
+        probs = [(key[0], float(key[1][0])) for key in gaze_scores]
+        just_p = [key[1] for key in probs]
+        tot = sum(just_p)
+        gaze_probs = [(key[0], key[1]/tot) for key in probs]
+
+        # If there's context, combine with language model
+        context_str = " ".join(context).strip()
+        if context_str:
+            language_scores = self.language_context.words_and_probs(context_str.lower())
+            return self.language_context.combine_probs(
+                gaze_probs=gaze_probs,
+                language_probs=language_scores,
+                language_weight=0.3
+            )
+        return gaze_scores[:3]
+
+    def _save_incoming_data(self, data: dict):
+        """Save incoming request data."""
+        try:
+            with open("incoming.txt", 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving incoming data: {str(e)}")
+
+    def _save_prediction_results(self, data: dict, predictions: List):
+        """Save prediction results and eye tracking data."""
+        try:
+            with open(f"eyeData/eyeTracking{self.session_timestamp}.txt", 'a') as f:
+                f.write(f"{json.dumps(data)}\n")
+                f.write(f"{json.dumps({'top_words': [key[0] for key in predictions]})}\n")
+        except Exception as e:
+            print(f"Error saving prediction results: {str(e)}")
+
+    def testing(self):
+        """Handle test endpoint for model evaluation."""
+        df = pd.read_csv('data/user/collection_v2.csv')
+        df = df.groupby('word_id')
+        tc = TCluster()
+        
+        results = []
+        for word_id, group in df:
+            group = group[group['y'] > 0]
+            if len(group) == 0:
+                continue
+            
+            tc.fit(group[['x', 'y', 'time']])
+            keys = tc.predict(self.custom_keyboard, self.root)
+            results.append({'word_id': word_id, 'keys': keys})
+        
+        return jsonify({'results': results})
+
+    def run(self, **kwargs):
+        """Run the Flask application."""
+        self.app.run(**kwargs)
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    eye_typing_app = EyeTypingApp()
+    eye_typing_app.run(port=5000, debug=True)

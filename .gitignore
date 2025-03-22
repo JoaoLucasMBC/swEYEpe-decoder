@@ -171,3 +171,4 @@ data/corpus/coca-samples-text
 /test
 data/bigram_v2.json
 eyeData/*.txt
+eyeData/*.json

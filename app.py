@@ -197,7 +197,7 @@ class EyeTypingApp:
             
             # Construct the full entry with timestamp
             entry = {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': data["time"],
                 'input_data': data,
                 'predictions': {
                     'top_words': [key[0] for key in predictions],

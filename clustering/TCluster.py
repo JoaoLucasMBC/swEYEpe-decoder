@@ -72,12 +72,12 @@ class TCluster:
         # Noise points
         self.X = self.X[self.X['label'] != -1]
 
-        # Don't keep the labels that the amount of points are 2 IQRs away from the median
-        Q1 = self.X['label'].value_counts().quantile(0.25)
-        Q3 = self.X['label'].value_counts().quantile(0.75)
-        IQR = Q3 - Q1
+        # # Don't keep the labels that the amount of points are 2 IQRs away from the median
+        # Q1 = self.X['label'].value_counts().quantile(0.25)
+        # Q3 = self.X['label'].value_counts().quantile(0.75)
+        # IQR = Q3 - Q1
 
-        self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 1.5 * IQR]
+        # self.X = self.X[self.X['label'].map(self.X['label'].value_counts()) > Q1 - 1.5 * IQR]
 
         # Update the labels
         self.labels_ = self.X['label'].tolist()

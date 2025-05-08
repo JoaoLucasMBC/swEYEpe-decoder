@@ -4,11 +4,9 @@ import re
 from collections import defaultdict
 
 class Key:
-    def __init__(self, letter, center, width, height):
+    def __init__(self, letter, center):
         self.letter = letter
         self.center = center
-        self.width = width
-        self.height = height
 
 class TrieNode:
     def __init__(self):
@@ -120,16 +118,16 @@ class GlanceWriterDecoder:
 def create_keyboard_layout():
     # This is a simplified QWERTY layout. Adjust key positions and sizes as needed.
     keys = [
-        Key('Q', (10, 10), 20, 20), Key('W', (30, 10), 20, 20), Key('E', (50, 10), 20, 20),
-        Key('R', (70, 10), 20, 20), Key('T', (90, 10), 20, 20), Key('Y', (110, 10), 20, 20),
-        Key('U', (130, 10), 20, 20), Key('I', (150, 10), 20, 20), Key('O', (170, 10), 20, 20),
-        Key('P', (190, 10), 20, 20),
-        Key('A', (20, 30), 20, 20), Key('S', (40, 30), 20, 20), Key('D', (60, 30), 20, 20),
-        Key('F', (80, 30), 20, 20), Key('G', (100, 30), 20, 20), Key('H', (120, 30), 20, 20),
-        Key('J', (140, 30), 20, 20), Key('K', (160, 30), 20, 20), Key('L', (180, 30), 20, 20),
-        Key('Z', (30, 50), 20, 20), Key('X', (50, 50), 20, 20), Key('C', (70, 50), 20, 20),
-        Key('V', (90, 50), 20, 20), Key('B', (110, 50), 20, 20), Key('N', (130, 50), 20, 20),
-        Key('M', (150, 50), 20, 20)
+        Key('Q', (10, 10)), Key('W', (30, 10)), Key('E', (50, 10)),
+        Key('R', (70, 10)), Key('T', (90, 10)), Key('Y', (110, 10)),
+        Key('U', (130, 10)), Key('I', (150, 10)), Key('O', (170, 10)),
+        Key('P', (190, 10)),
+        Key('A', (20, 30)), Key('S', (40, 30)), Key('D', (60, 30)),
+        Key('F', (80, 30)), Key('G', (100, 30)), Key('H', (120, 30)),
+        Key('J', (140, 30)), Key('K', (160, 30)), Key('L', (180, 30)),
+        Key('Z', (30, 50)), Key('X', (50, 50)), Key('C', (70, 50)),
+        Key('V', (90, 50)), Key('B', (110, 50)), Key('N', (130, 50)),
+        Key('M', (150, 50))
     ]
     return keys
 

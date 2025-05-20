@@ -50,13 +50,15 @@ class TCluster:
         verbose: bool - Whether to print the labels and core samples.
         """
 
-        self.X = X
+        # Create a copy of the input DataFrame to avoid chained indexing
+        self.X = X.copy()
 
         # Fit the DBSCAN model to the data
         self.model.fit(X)
 
         self.labels_ = self.model.labels_
-        self.X['label'] = self.labels_
+        # Use .loc to make the assignment explicit
+        self.X.loc[:, 'label'] = self.labels_
 
         self._filter_labels()
 
